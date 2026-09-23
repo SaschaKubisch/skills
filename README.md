@@ -73,6 +73,31 @@ builder round, and another judge round with `--judge` — or stop without
 accepting, which leaves the ticket in `in-progress/` for `/implement-ticket
 <slug>` to resume later.
 
+## Where things land
+
+The first interview is about the whole product, and its files sit at the
+root: `context/system.md`, `specs/system.md`, and its tickets under
+`items/system/tickets/`. Everything specified after that asks one
+question first — a new item, or a refinement of the system?
+
+```
+context/system.md                    specs/system.md
+items/system/tickets/<column>/NNNN-<slug>/        the system's tickets
+context/<topic>.md, specs/<topic>.md              a refinement; its tickets
+                                                  join items/system/tickets/
+items/<slug>/brief.md                             a new item: its brief,
+items/<slug>/context/<slug>.md                    its record,
+items/<slug>/specs/<slug>.md                      its spec (Parent:
+                                                  specs/system.md),
+items/<slug>/tickets/<column>/NNNN-<slug>/        and its tickets
+```
+
+The columns are `backlog/`, `ready/`, `in-progress/` and `done/`.
+Ticket numbers are one sequence across every item, so
+`/implement-ticket` always offers the lowest-numbered unblocked ticket
+next, whichever item it belongs to. An item adds to the system's spec
+and never changes it.
+
 ## Install
 
 ```

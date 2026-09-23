@@ -56,8 +56,8 @@ and do not stop.
 `items/<slug>/specs/<slug>.md`, beside the record, with `Parent:
 specs/<ID>.md` — or `goals/<ID>.md` while the goal has no spec yet —
 naming the item's own goal (its `Goal:` or `Outcome:` line
-in `items/<slug>/brief.md`), or `Parent: None yet` if the brief names
-none. It is a per-topic spec in every other respect: read `specs/system.md`
+in `items/<slug>/brief.md`). A brief that names no goal: `Parent:
+specs/system.md` when that exists, else `Parent: None yet`. It is a per-topic spec in every other respect: read `specs/system.md`
 too, and respect its invariants.
 
 Source files without a record write `specs/system.md`. A record in any

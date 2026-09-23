@@ -8,7 +8,9 @@ description: >-
   examples before the question is asked again; the user can always
   answer in their own words instead. Three entries: the general
   interview on an empty repository; the goal interview, scoped to one
-  roadmap goal; the item interview, reading items/<slug>/brief.md.
+  roadmap goal; the item interview, reading items/<slug>/brief.md, or
+  writing it first from a phrase once specs/system.md exists, when the
+  user says the phrase is a new item rather than a refinement.
   Writes the project's vocabulary into CONTEXT.md and its hard decisions
   into docs/adr/ as they settle, and everything else it settled into an
   interview record — context/<topic>.md, or
@@ -46,6 +48,7 @@ to run.
 ```
 /specify brief.md
 /specify prices and tax on the guest menu
+/specify let guests filter dishes by allergen
 /specify
 /specify R-01
 /specify items/table-ordering/brief.md
@@ -67,8 +70,24 @@ other slug is agreed (say it before the first question, the user can
 change it), write `items/<slug>/brief.md` in the user's own words —
 nothing added beyond what they just said, the same rule as everywhere
 else in this skill — and continue at once into the item interview against
-that brief, without a further invocation. Any other phrase is the topic
-of a plain interview. Nothing, in a repository that already has a
+that brief, without a further invocation.
+
+Any other phrase, in a repository that already has `specs/system.md`, is
+either a **new item** or a **topic** that refines the system, and the
+user decides which. Before anything else, ask (see Asking): "A new item,
+or a refinement of the system?", options "A new item" — a feature with
+its own folder, `items/<slug>/`, holding its brief, its record, its spec
+and its tickets — / "A refinement of the system" — a topic whose record
+and spec sit beside the system's, `context/<slug>.md` and
+`specs/<slug>.md`, and whose tickets join `items/system/` / "I don't
+understand". Recommend the item when the phrase names a capability the
+system does not have; recommend the refinement when it settles a
+question the system's spec already lists under Open decisions. A new
+item: agree its slug the same way, write `items/<slug>/brief.md` — the
+phrase as the user gave it, nothing added — commit it, and continue at
+once into the item interview against that brief. A refinement: the
+plain interview. Any other phrase, in a repository with no
+`specs/system.md`, is the topic of a plain interview. Nothing, in a repository that already has a
 `roadmap.md`, also means the goal interview, for a new heading not yet on
 the roadmap — see "Look first". Nothing in a repository with no
 `roadmap.md` is the **general interview**: read the
@@ -311,6 +330,10 @@ out of a session, and they land in three places:
   `write-spec`, and do not act further on the interview.
 - The roadmap draft has not had an explicit yes: write nothing to
   `roadmap.md`. A changed mind after yes is a new proposal, asked again.
+- An item's answer contradicts an invariant in `specs/system.md`: it
+  becomes an open decision in the item's record, in the user's words.
+  An item adds to the system's spec; it never changes it. Changing
+  `specs/system.md` is a person's edit.
 - A feature or capability comes up mid-goal-interview: note it as a
   candidate item and continue the goal's own frontier. Do not open an
   item interview for it in the same session.
@@ -455,7 +478,8 @@ titled `# <slug> — interview record`, its Sources including
 `items/<slug>/brief.md`.
 
 **A brief written by this skill**, when a new item is proposed straight
-from a goal (see Argument) rather than handed to it ready-made,
+from a goal or from a phrase (see Argument) rather than handed to it
+ready-made,
 `items/<slug>/brief.md`:
 
 ```markdown
@@ -465,6 +489,9 @@ from a goal (see Argument) rather than handed to it ready-made,
 
 Goal: <ID>
 ```
+
+The `Goal:` line only when the item was proposed from a goal; an item
+proposed from a bare phrase has none.
 
 Nothing else. The item interview that follows is where everything else
 gets settled.
