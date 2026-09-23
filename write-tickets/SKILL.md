@@ -290,6 +290,15 @@ gh api --method POST \
 If the mirror is not configured, say so plainly and stop after the files.
 The files are the tickets; the issues are a view.
 
+**9. Close with the handoff.** Ask (see Asking): "Start implementing
+<first-ticket>?", options "Yes, implement it now (Recommended)" / "Not
+now; I'll start it myself". Where a tool, rather than a person, is what
+moves tickets from `ready/` through `in-progress/`, answer "Not now" and
+let it pick the ticket up. On yes: read
+`.claude/skills/implement/SKILL.md` — the implement skill beside this
+one, at its installed path — in full, and follow it, with the first
+ticket's slug as its argument.
+
 ## Stop when
 
 - The user has not approved the breakdown: write nothing.
@@ -297,8 +306,9 @@ The files are the tickets; the issues are a view.
   Delete it, or write the reason.
 - The ticket files are written but not committed: commit them. A ticket
   the gate cannot move is not delivered.
-- A ticket would land in `tickets/ready/`: it does not. Ready is a gate;
-  a person or a tool decides whether a ticket passes it — not this skill.
+- A ticket would land in `tickets/ready/`: it does not. This skill never
+  moves a ticket to `ready/` itself — `implement`'s claim does that, or
+  a tool does.
 - An exit condition is prose: it is not an exit condition.
 - A ticket has no `Summary:` line, or one longer than two sentences: fix
   it before writing the file.

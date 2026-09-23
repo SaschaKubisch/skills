@@ -224,9 +224,7 @@ out of a session, and they land in three places:
    <name>` — the topic, the item's slug, or the goal's ID, whichever
    named the record just written. Say what the commit added: the record,
    the terms, any ADR.
-5. Ask the user to read the record, correct the diagrams, and confirm
-   you share one understanding.
-6. **After the general interview only**, offer to draft the roadmap from
+5. **After the general interview only**, offer to draft the roadmap from
    `context/system.md`: propose one heading per goal the record implies,
    each with its `After:` line where one goal's work depends on
    another's, and one paragraph each — all as a single proposal, through
@@ -242,12 +240,22 @@ out of a session, and they land in three places:
    this exact separator, so a heading written any other way (no
    separator, a plain hyphen, a colon) is not read as a goal at all: it
    is drawn as a draft with no title, forever, and `goals/<ID>.md`
-   never matches it.
-7. Point at `write-spec`, with the record as its argument (an item's
-   record for the item interview, a goal's for the goal interview), and
-   at `write-tickets` after it — except the roadmap draft alone, which
-   points at nothing: a draft heading is interviewed, not specified,
-   before it has a spec.
+   never matches it. This offer, and the handoff below, are about the
+   record this interview just wrote — not about the drafted headings
+   themselves: a draft heading is interviewed, not specified, before it
+   has its own goal record.
+6. **Close with the handoff.** Invite the user to read the record and
+   correct the diagrams, then ask (see Asking): "Write the spec now?",
+   options "Yes, the record is right; write the spec (Recommended)" /
+   "Something in the record is wrong" / "Stop here". "Something in the
+   record is wrong" gets a plain-text follow-up — what is wrong — then
+   the record is fixed and the same question asked again; the interview
+   is not otherwise reopened. "Stop here" ends the skill; the record
+   stands as written. On yes: read `.claude/skills/write-spec/SKILL.md`
+   — the write-spec skill beside this one, at its installed path — in
+   full, and follow it, with the record as its argument (an item's
+   record for the item interview, a goal's for the goal interview).
+   write-spec's own handoff carries the chain on to write-tickets.
 
 ## Stop when
 
@@ -259,7 +267,8 @@ out of a session, and they land in three places:
   next. Never bundle.
 - A third proposed option seems needed: the question is two questions,
   so split it, or the third way is one sentence in the question text.
-  The two standing options are not proposals and do not count.
+  The standing "I don't understand" option is not a proposal and does
+  not count.
 - The user picks "I don't understand": explain, with scenes, before
   asking anything. Never move on from a question the user did not
   understand.
@@ -267,8 +276,8 @@ out of a session, and they land in three places:
   Never your answer.
 - Something would go into `CONTEXT.md` that is not a term: it goes into
   the record instead.
-- The user has not confirmed shared understanding: do not point at
-  `write-spec`, and do not act on the interview.
+- The handoff question has not been answered "yes": do not read
+  `write-spec`, and do not act further on the interview.
 - The roadmap draft has not had an explicit yes: write nothing to
   `roadmap.md`. A changed mind after yes is a new proposal, asked again.
 - A feature or capability comes up mid-goal-interview: note it as a

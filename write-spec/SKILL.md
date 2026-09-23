@@ -113,9 +113,10 @@ the repository, before writing.
 **2. Show the exit conditions and, for a per-topic spec, the seams, as
 text, then ask the user to confirm them** (see Asking): "Use these as
 the finish line?", options "Yes, as proposed (Recommended)" / "Change
-them". It is the one question this skill asks: the commands are the
-finish line every ticket cut from this spec inherits, so they are
-confirmed here, once.
+them". It is the one question this skill asks about the spec's own
+contents: the commands are the finish line every ticket cut from this
+spec inherits, so they are confirmed here, once. The close, below, asks
+a second, separate question — whether to move on.
 
 **3. Write the spec** with the template below: `specs/<record name>.md`,
 or `specs/system.md` when there is no record, or `items/<slug>/specs/<slug>.md`
@@ -132,6 +133,12 @@ read it.
 plain topic's slug, or the item's slug). A committed spec is what leaves
 the tree clean for whatever cuts tickets next.
 
+**6. Close with the handoff.** Ask (see Asking): "Cut it into tickets
+now?", options "Yes (Recommended)" / "Stop here". On yes: read
+`.claude/skills/write-tickets/SKILL.md` — the write-tickets skill
+beside this one, at its installed path — in full, and follow it, with
+the spec just written as its argument.
+
 ## Stop when
 
 - A section has no source: no product description, no invariants, or
@@ -146,8 +153,11 @@ the tree clean for whatever cuts tickets next.
 - The conversation holds a settled decision the record does not: the
   record is incomplete. Say so; it is what a later session will read.
 - A source contradicts an ADR: say so. Do not pick a side.
-- You are about to ask anything other than the one confirmation: you do
+- You are about to ask anything about the spec's contents beyond the one
+  confirmation, or anything beyond the close's yes/no handoff: you do
   not interview. Point at `specify`.
+- The confirmation has not been answered "yes": do not read
+  `write-tickets`, and do not act further.
 
 ## The template
 
