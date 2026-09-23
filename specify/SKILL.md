@@ -1,6 +1,6 @@
 ---
 name: specify
-description: Interview the user about a brief, a feature or a whole product until nothing is left silently assumed, one question at a time through the answer form, up to two proposed options, one of them recommended, then always two more: the user's own answer, and "I don't understand", which earns a plain explanation with examples before the question is asked again. Three entries: the general interview on an empty repository; the goal interview, scoped to one roadmap goal; the item interview, reading items/<slug>/brief.md. Writes the project's vocabulary into CONTEXT.md and its hard decisions into docs/adr/ as they settle, and everything else it settled into an interview record — context/<topic>.md, or items/<slug>/context/<slug>.md for an item — at the close. Draws the settled thing as diagrams at the close, in the record, for the user to correct. Offered afterward, drafts headings and After lines into roadmap.md, only once the user says yes, and nothing under goals/ or items/. What the user cannot settle is recorded as an open decision, in their words. Writes no spec — write-spec does that next, from the record. Type it; the model never starts it on its own.
+description: Interview the user about a brief, a feature or a whole product until nothing is left silently assumed, one question at a time through the answer form, up to two proposed options, one of them recommended, then always "I don't understand", which earns a plain explanation with examples before the question is asked again; the user can always answer in their own words instead. Three entries: the general interview on an empty repository; the goal interview, scoped to one roadmap goal; the item interview, reading items/<slug>/brief.md. Writes the project's vocabulary into CONTEXT.md and its hard decisions into docs/adr/ as they settle, and everything else it settled into an interview record — context/<topic>.md, or items/<slug>/context/<slug>.md for an item — at the close. Draws the settled thing as diagrams at the close, in the record, for the user to correct. Offered afterward, drafts headings and After lines into roadmap.md, only once the user says yes, and nothing under goals/ or items/. What the user cannot settle is recorded as an open decision, in their words. Writes no spec — write-spec does that next, from the record. Type it; the model never starts it on its own.
 disable-model-invocation: true
 ---
 
@@ -87,26 +87,30 @@ Detect, do not assume. Read what is already here:
 Say what you found before the first question, and which entry you are
 running and why.
 
+## Asking
+
+> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool —: a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
+
 ## Do
 
 **1. Map the thing as a design tree and ask one question at a time.**
 Every decision branches into the smaller decisions that depend on it. The
 **frontier** is every decision whose prerequisites are already settled —
 the questions you can ask now without guessing at an answer you have not
-heard yet. Pick one question from the frontier and ask it through the
-answer form (the `AskUserQuestion` tool), in the question format below:
-up to two proposed options, the recommended one first and marked
-`(Recommended)`, each with a one-line description of what it means,
-and after them always the same two: "My own answer", for the user's
-own words, and "I don't understand". The form holds four options, which
-is why two proposals; a real third way is named in the question text.
-When the user picks "I don't understand", explain the question again
-before anything else, as to someone who has never done this: what the
-thing is in one sentence, then one short scene from their day for each
-option, what they would see and what would change for them. No project
-words without a plain gloss. Then ask the same question again. One
-question per call; never bundle several questions into one
-form. Then stop and wait. When the answer is in, recompute the frontier
+heard yet. Pick one question from the frontier and ask it (see Asking,
+above), in the question format below: up to two proposed options, the
+recommended one first and marked `(Recommended)`, each with a one-line
+description of what it means, and after them always "I don't
+understand" — the form's own free-text answer already covers the
+user's own words. When the user picks "I don't understand", explain the
+question again before anything else, as to someone who has never done
+this: what the thing is in one sentence, then one short scene from
+their day for each option, what they would see and what would change
+for them. No project words without a plain gloss. Then ask the same
+question again. One question per call, never several bundled into one
+form: Asking allows independent questions to share a call, but the
+frontier changes with every answer, so only one question here is ever
+independent at a time. Then stop and wait. When the answer is in, recompute the frontier
 and ask the next question. A question whose answer depends on another
 still open waits until that answer is in; asking it now forces a guess,
 and a guessed answer is worse than an unasked question. Order the
@@ -273,7 +277,7 @@ out of a session, and they land in three places:
 
 ## Formats
 
-**A question** — one call of the answer form:
+**A question** — one call of the answer form (see Asking):
 
 ```
 header:   <title, at most 12 characters>
@@ -283,15 +287,14 @@ options:
      <one line: what it means, and why it is recommended>
   2. <alternative>
      <one line: what it means, and its cost>
-  3. My own answer
-     Always present: the user writes it under Other.
-  4. I don't understand
+  3. I don't understand
      Always present, always last: the question is explained again in
      plain words with a scene per option, then asked again.
 ```
 
-Two proposed options at most; the two standing options are always the
-last two. The recommended option is always first. A yes/no question offers "Yes, as proposed (Recommended)"
+Two proposed options at most; "I don't understand" is always last — the
+form's own free-text answer already stands in for "my own answer", so
+it is not a listed option. The recommended option is always first. A yes/no question offers "Yes, as proposed (Recommended)"
 and "No, differently", and the user says how under Other. The question
 text carries the proposal in full; the options do not repeat it.
 

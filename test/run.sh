@@ -54,6 +54,25 @@ if "$here/install.sh" "$notadir" >/dev/null 2>&1; then
   fail=1
 fi
 
+# the shared "Asking" paragraph is byte-identical in specify, write-spec,
+# write-tickets and implement
+asking_skills=(specify write-spec write-tickets implement)
+asking_first=""
+for s in "${asking_skills[@]}"; do
+  line="$(grep -m1 "^> Every question to the person" "$here/$s/SKILL.md" || true)"
+  if [[ -z "$line" ]]; then
+    echo "FAIL: $s/SKILL.md has no Asking paragraph" >&2
+    fail=1
+    continue
+  fi
+  if [[ -z "$asking_first" ]]; then
+    asking_first="$line"
+  elif [[ "$line" != "$asking_first" ]]; then
+    echo "FAIL: $s/SKILL.md's Asking paragraph differs from specify's" >&2
+    fail=1
+  fi
+done
+
 if [[ "$fail" -eq 0 ]]; then
   echo "PASS: install.sh copies every file byte-identical, refuses a bad target"
 fi

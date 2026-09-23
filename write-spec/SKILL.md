@@ -64,6 +64,10 @@ Detect, do not assume:
 Say which sources you use and what role each plays, and what you found in
 the repository, before writing.
 
+## Asking
+
+> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool —: a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
+
 ## Do
 
 **1. Extract, do not paraphrase.**
@@ -106,10 +110,12 @@ the repository, before writing.
   Open decisions where there is a record. A required section: if empty,
   say so and why; never delete the heading.
 
-**2. Show the exit conditions and, for a per-topic spec, the seams, and
-ask the user to confirm them.** One message, one answer. It is the one
-question this skill asks: the commands are the finish line every ticket
-cut from this spec inherits, so they are confirmed here, once.
+**2. Show the exit conditions and, for a per-topic spec, the seams, as
+text, then ask the user to confirm them** (see Asking): "Use these as
+the finish line?", options "Yes, as proposed (Recommended)" / "Change
+them". It is the one question this skill asks: the commands are the
+finish line every ticket cut from this spec inherits, so they are
+confirmed here, once.
 
 **3. Write the spec** with the template below: `specs/<record name>.md`,
 or `specs/system.md` when there is no record, or `items/<slug>/specs/<slug>.md`

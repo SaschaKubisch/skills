@@ -61,6 +61,10 @@ Detect, do not assume:
 Say what you found before cutting a slice. Every step and every exit
 condition below depends on it.
 
+## Asking
+
+> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool —: a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
+
 ## Do
 
 **1. Prefactoring first.** Explore the code for changes that would make
@@ -213,14 +217,15 @@ decision, but only once it is written down. What only a person can judge
 becomes a `[REVIEW]` step, and is listed under `HUMAN CHECK` with what to
 look at; never dress a human check up as a command.
 
-**6. Present the breakdown, and ask once.** A numbered list. Per ticket:
+**6. Present the breakdown, then ask.** A numbered list. Per ticket:
 title; AFK or HITL; blocked by (or "nothing — can start now"); what it
 delivers, end to end; its steps; its exit conditions. If the project's
 CLAUDE.md has no `## Conventions` section, propose one in the same round
 — the format is defined in the build skill — from what "Look first"
 detected (checks, end-to-end command, screenshot sizes and method, base
 branch, github project), with the build skill's defaults for whatever
-detection came up empty. Then ask:
+detection came up empty. Print this reading checklist beside the
+breakdown, for the user to check the plan against before answering:
 
 - Does the granularity feel right — too coarse, too fine?
 - Are the blocking edges real? Each one names the test it passes; does
@@ -235,7 +240,12 @@ detection came up empty. Then ask:
   step that traces to nothing?
 - Does the proposed Conventions section look right, where one was proposed?
 
-Iterate until the user approves.
+Then ask, one call (see Asking), up to two questions: "Approve this
+breakdown?", options "Approve and write the tickets (Recommended)" /
+"Too coarse" / "Too fine"; and, only when this round proposed a
+Conventions section, "Use the proposed Conventions section?", options
+"Yes, as proposed (Recommended)" / "Change it". Iterate on anything but
+approval.
 
 **7. Write the ticket files**, blockers first, from the template below:
 `items/<item>/tickets/backlog/NNNN-<slug>/ticket.md`, the item from the

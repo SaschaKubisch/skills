@@ -24,6 +24,10 @@ there is no round cap — only the person stops it.
 - The verdict always lives in `validation/verdict.md`; there is no pull
   request.
 
+## Asking
+
+> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool —: a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
+
 ## Do
 
 1. **Pick up.** If the ticket's folder is not already in its item's
