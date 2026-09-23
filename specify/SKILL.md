@@ -54,7 +54,10 @@ to run.
 
 A file path under `items/` — `items/<slug>/brief.md` — is the **item
 interview**: read the brief in full, then interview about that item
-alone. Any other file path is read in full before the first question. A
+alone. Any other file path — a brief, a requirements file — is read in
+full before the first question; in a repository with no `roadmap.md` it
+is the **general interview**, with that file as its first source, and
+writes `context/system.md`. A
 phrase naming an existing roadmap heading, or a bare goal ID (`R-01`), is
 the **goal interview**, scoped to that heading. A goal ID together with a
 new capability or feature idea — not the heading's own words, something
@@ -73,7 +76,8 @@ repository itself, then interview the user about what it is and what it
 is for.
 
 The argument also names the record this skill writes at the close: the
-general interview writes `context/system.md`; a plain topic writes
+general interview — a bare `/specify`, or a brief's path, in a repository
+with no `roadmap.md` — writes `context/system.md`; a plain topic writes
 `context/<slug>.md`, the slug made from the phrase (`prices and tax on
 the guest menu` becomes `pricing-tax`); the item interview writes
 `items/<slug>/context/<slug>.md`, named after the item, not the topic.
