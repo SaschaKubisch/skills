@@ -1,6 +1,6 @@
 ---
 name: implement
-description: The loop for one ticket — `<slug> [--judge]`, typed by a person. Claims it, applying the ready gate as it moves the ticket from backlog to ready to in-progress; creates or switches to its branch; starts the builder agent (Sonnet, the build method) and, only with --judge, the judge agent (Opus, the judge method) afterward — while the judge requests changes the builder works a review round on the findings, then the judge again, no round cap but a question after round three. Opens the validation report, then asks the person to accept it (merge --no-ff, move the ticket to done, offer the next frontier ticket), request changes (another builder round), or stop without accepting.
+description: The loop for one ticket — `<slug> [--judge]`, typed by a person. Claims it, applying the ready gate as it moves the ticket from backlog to ready to in-progress; creates or switches to its branch; starts the builder agent (Sonnet, the build method) and, only with --judge, the judge agent (Opus, the judge method) afterward — while the judge requests changes the builder works a review round on the findings, then the judge again, no round cap but a question after each judge round from the third on that still has findings. Opens the validation report, then asks the person to accept it (merge --no-ff, move the ticket to done, offer the next frontier ticket), request changes (another builder round), or stop without accepting.
 disable-model-invocation: true
 ---
 
@@ -28,15 +28,20 @@ first, in rounds, before the report reaches the person.
 - The working tree: clean apart from a possible leftover `PROGRESS.md`.
   Anything else uncommitted: stop and say so.
 - The base branch, from the project's CLAUDE.md `## Conventions` section
-  (see the build skill; default `main`).
-- A `PROGRESS.md` left over from a different ticket: say so before
-  touching anything — a stale one would mislead the builder.
+  (see the build skill; default `main`). The default names a branch that
+  does not exist: ask which branch is the base, write the answer into
+  Conventions, and commit that file alone (`git commit -- CLAUDE.md`,
+  `Conventions: base branch`) before claiming.
+- A `PROGRESS.md` whose first line is not `ticket: <slug>` for this
+  ticket: it belongs to another ticket, or to none. Ask (see Asking)
+  whether to remove it or stop; never start the builder on it — the
+  builder skips every step it sees ticked.
 - The verdict, with `--judge`, always lives in `validation/verdict.md`;
   there is no pull request.
 
 ## Asking
 
-> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool —: a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
+> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool — with a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
 
 ## Do
 
@@ -58,11 +63,13 @@ two commits, the gate and the pickup. Already in `ready/`: only the
 pickup commit. Already in `in-progress/`: neither commit — this is a
 resume.
 
-**2. Branch.** The build method's branch rule (see the build skill),
-which now reads "create or switch to": never work on the base branch; on
-it, create or switch to `<kind>/<slug>` (the `Kind:` line, the ticket's
-slug) — fresh, or picking back up a branch an earlier round already
-made; on any other branch, stay. Say the branch.
+**2. Branch.** `<kind>/<slug>` (the `Kind:` line, the ticket's slug):
+`git switch <kind>/<slug>` if an earlier round or session already made
+it, else `git switch -c <kind>/<slug> <base>` — whatever branch the
+working copy is on, a resume included, so a ticket is never built on
+another ticket's branch. Say the branch. The
+builder then finds itself off the base branch and stays there, as the
+build method's own branch rule says.
 
 **3. Build.** Start the `builder` agent, pinned twice over — once in its
 own frontmatter, once again in the spawn (in Claude Code: `Agent` with
@@ -80,8 +87,8 @@ follow the judge method and give a verdict. Wait. It writes
 pass` or `- [ ] judge round <n>: <finding>` lines to `PROGRESS.md`.
 Findings: start the builder again — a review round, in the build
 method's own sense — on the appended lines, then the judge again. No
-round cap, but from round 3 on, each round that still has findings is
-followed by asking (see Asking): "Judge round <n> still has findings.",
+round cap, but every judge round from the third on that still has
+findings is followed by asking (see Asking): "Judge round <n> still has findings.",
 options "One more round (Recommended)" / "Show me the report and let me
 decide" / "Stop here". The last two both go to step 5 and stop the
 judge loop there, for the person to decide from the report.
@@ -108,7 +115,8 @@ number), question "Accept NNNN: merge it and mark it done?", options:
 
 - "Accept and start <next-slug> (Recommended)" — or, when nothing is
   left, "Accept, this was the last ticket" — then step 7, then loop back
-  to step 1 with the next ticket.
+  to step 1 with the next ticket, with the same `--judge` setting this
+  ticket ran with.
 - "Accept and stop" — then step 7, name the next ticket without starting
   it, and stop.
 - "Request changes" — a plain-text follow-up, "What should change? One
@@ -132,10 +140,17 @@ number), question "Accept NNNN: merge it and mark it done?", options:
 
 Keep the branch; deleting it is the person's call, not this skill's.
 
+**The GitHub mirror.** Every move this skill makes — to `ready/`,
+`in-progress/`, `done/` — is followed, for a ticket with a `Mirror:`
+line, by setting the issue's project Status to the option of the same
+name as the column (`Ready`, `In progress`, `Done`). The project has no
+option of that name: say so and leave the Status as it is. The folder
+is the ticket's state; the Status only follows it.
+
 **8. Next ticket.** The lowest-numbered ticket across every
 `items/*/tickets/{ready,backlog}/` whose every `Blocked by` slug has a
-folder in `done/`. HITL tickets and any `## Loop: interactive` ticket
-are included — a person is right here. For a HITL ticket, say which step
+folder in `done/`. HITL tickets are included — a person is right
+here. For a HITL ticket, say which step
 needs the person before starting it.
 
 ## Stop when

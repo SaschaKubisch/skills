@@ -36,8 +36,8 @@ A spec path. Default `specs/system.md`.
 Read it in full. Read `specs/system.md` too if it is not the argument — a
 per-topic or per-item spec is one slice of the standing spec, and every
 ticket still obeys all of it. Read the spec's interview record —
-`context/<same name>.md`, or `items/<slug>/context/<slug>.md` for an
-item's spec — if it exists: its Settled list says why each decision went
+`context/<same name>.md`, `goals/<ID>.md` for a goal's spec, or
+`items/<slug>/context/<slug>.md` for an item's spec — if it exists: its Settled list says why each decision went
 the way it did. Read `CONTEXT.md`: the tickets use the glossary's words.
 
 Every spec cuts tickets into `items/<item>/tickets/backlog/`: an item's
@@ -54,6 +54,13 @@ Detect, do not assume:
   database? A UI? Which items in the spec are already true in the code?
 - Existing tickets: every `items/*/tickets/*/` folder and the highest
   number across all of them.
+- The branch checked out, and the base branch from the project's
+  CLAUDE.md `## Conventions` section (see the build skill). Not on the
+  base branch: say so, and ask (see Asking) whether to switch to it
+  before writing — `implement` claims tickets from the base branch, and
+  a ticket committed elsewhere is not there to claim. Not a git
+  repository: say so; the ticket files are written but nothing is
+  committed, and `implement` cannot run until they are.
 - The mirror: `gh auth status`, and a `github project` line under the
   project's CLAUDE.md `## Conventions` section (see the build skill).
   Configured, or not — absent means the mirror is off.
@@ -63,7 +70,7 @@ condition below depends on it.
 
 ## Asking
 
-> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool —: a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
+> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool — with a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
 
 ## Do
 
@@ -266,7 +273,8 @@ If this round proposed a `## Conventions` section, write it into the
 project's CLAUDE.md now.
 
 Then commit the ticket files — and the Conventions section, if this round
-proposed one — in one commit, before saying anything else. Every move a
+proposed one — in one commit, by path (`git commit -- <paths>`, so
+nothing already staged rides along), before saying anything else. Every move a
 ticket makes is a `git mv` and a commit, so an uncommitted ticket cannot
 pass any gate that checks version control. Close by naming the first
 ticket with nothing blocking it, by slug (`0001-walking-skeleton`).
@@ -276,7 +284,8 @@ it.
 **8. Mirror to GitHub, if configured.** Blockers first: one issue per
 ticket with the file's body, `Mirror: <issue url>` written back into the
 file under the title, project Status **Backlog**, and native dependencies
-where the repository has them:
+where the repository has them. Then commit the ticket files the
+`Mirror:` lines changed, by path: `Mirror: <first>–<last>`.
 
 ```bash
 # the blocker's database id — not its #number, not its node id
@@ -413,12 +422,14 @@ person reads at the run review.
 
 ## Working the frontier
 
-The **frontier** is every ticket in a `tickets/ready/` folder, in any
-item, whose `Blocked by` folders are all in a `tickets/done/` folder.
-That is what can run right now.
+The **frontier** is every ticket in a `tickets/ready/` or
+`tickets/backlog/` folder, in any item, whose `Blocked by` folders are
+all in a `tickets/done/` folder. That is what can run right now; a
+ticket in `backlog/` passes the ready gate on its way (see `implement`).
 
 - Claim before working: move the folder to `in-progress/`, first thing,
-  and commit the move — that is the claim.
+  and commit the move — that is the claim. A mirrored ticket's project
+  Status follows each move (see `implement`).
 - AFK tickets on the frontier can run in parallel, one working copy each.
 - HITL tickets wait for a person, however unblocked they are.
 - A purely linear chain has a frontier of one; work top to bottom.

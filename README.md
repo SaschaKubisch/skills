@@ -59,8 +59,8 @@ hands the same working copy to a **judge** agent, which follows the
 **judge** skill to check the builder's work without fixing anything
 itself; while the judge requests changes, the builder works a review
 round on its findings and the judge checks again — no round cap, though
-a round past the third that still has findings stops to ask the person
-how to proceed. `build` and `judge` are not run on their own in this
+every judge round from the third on that still has findings stops to
+ask the person how to proceed. `build` and `judge` are not run on their own in this
 flow; they are the methods `implement`'s two agents follow. A person can
 also type `/build` or `/judge` directly to work or check a ticket by
 hand, outside the loop.

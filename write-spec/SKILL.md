@@ -1,10 +1,11 @@
 ---
 name: write-spec
 description: >-
-  Turn an interview record (context/<topic>.md, or
-  items/<slug>/context/<slug>.md for an item) and the sources it names
-  into a spec — specs/system.md for the whole product, specs/<topic>.md
-  for one topic, items/<slug>/specs/<slug>.md for an item — the locked,
+  Turn an interview record (context/<topic>.md, goals/<ID>.md for a
+  goal, or items/<slug>/context/<slug>.md for an item) and the sources it
+  names into a spec — specs/system.md for the whole product,
+  specs/<topic>.md for one topic, specs/<ID>.md for a goal,
+  items/<slug>/specs/<slug>.md for an item — the locked,
   word-for-word record of what must be true, with a finish line of
   commands. Pass the record, or source files; with nothing, it finds the
   sources by reading. Looks at the repository first and uses its names;
@@ -31,6 +32,7 @@ The record, or source files.
 ```
 /write-spec context/system.md
 /write-spec context/pricing-tax.md
+/write-spec goals/R-01.md
 /write-spec brief.md invariants.md
 /write-spec
 ```
@@ -42,14 +44,25 @@ product; any other record writes a per-topic spec beside it with
 `Parent: specs/system.md`. The loop reads `specs/*` and treats all of them
 as locked; it does not care which is which.
 
+`goals/<ID>.md` — a goal's record, from the goal interview — writes
+`specs/<ID>.md`, a per-topic spec whose Parent is the roadmap outcome
+it serves, `roadmap.md: <ID> — <heading>`. Its Candidate items are not
+requirements: copy them under Out of scope, as items still to be
+interviewed. Its Invariants reading `None settled.` is a source, not a
+gap: write `None settled.` under Invariants, respect `specs/system.md`'s,
+and do not stop.
+
 `items/<slug>/context/<slug>.md` — an item's record — writes
 `items/<slug>/specs/<slug>.md`, beside the record, with `Parent:
-goals/<ID>.md` naming the item's own goal (its `Goal:` or `Outcome:` line
+specs/<ID>.md` — or `goals/<ID>.md` while the goal has no spec yet —
+naming the item's own goal (its `Goal:` or `Outcome:` line
 in `items/<slug>/brief.md`), or `Parent: None yet` if the brief names
 none. It is a per-topic spec in every other respect: read `specs/system.md`
 too, and respect its invariants.
 
-Source files without a record write `specs/system.md`. No argument: find
+Source files without a record write `specs/system.md`. A record in any
+other place is not guessed at: say which paths this skill knows, and
+stop. No argument: find
 the sources by reading — a brief, a requirements file, a list of
 invariants — not by guessing filenames.
 
@@ -78,7 +91,7 @@ the repository, before writing.
 
 ## Asking
 
-> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool —: a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
+> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool — with a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
 
 ## Do
 
@@ -130,9 +143,10 @@ contents: the commands are the finish line every ticket cut from this
 spec inherits, so they are confirmed here, once. The close, below, asks
 a second, separate question — whether to move on.
 
-**3. Write the spec** with the template below: `specs/<record name>.md`,
-or `specs/system.md` when there is no record, or `items/<slug>/specs/<slug>.md`
-when the record is an item's. Create the parent folder if needed. For a
+**3. Write the spec** with the template below: `specs/<record name>.md`
+(`specs/<ID>.md` for a goal's record), or `specs/system.md` when there is
+no record, or `items/<slug>/specs/<slug>.md` when the record is an
+item's. Create the parent folder if needed. For a
 per-topic or per-item spec, "What this is" describes the one topic or
 item, not the product.
 
@@ -140,10 +154,12 @@ item, not the product.
 runs the ticket applies it, in its own working copy, after a person has
 read it.
 
-**5. Commit the spec.** `git add` the file just written and commit it:
-`Spec: <name>` — the same name the file is written under (`system`, a
-plain topic's slug, or the item's slug). A committed spec is what leaves
-the tree clean for whatever cuts tickets next.
+**5. Commit the spec.** `git add` the file just written and commit that
+path alone (`git commit -- <path>`, so nothing already staged rides
+along): `Spec: <name>` — the same name the file is written under
+(`system`, a plain topic's slug, the goal's ID, or the item's slug). A
+committed spec is what leaves the tree clean for whatever cuts tickets
+next. Not a git repository: say so and skip the commit.
 
 **6. Close with the handoff.** Ask (see Asking): "Cut it into tickets
 now?", options "Yes (Recommended)" / "Stop here". On yes: read
@@ -168,8 +184,10 @@ the spec just written as its argument.
 - You are about to ask anything about the spec's contents beyond the one
   confirmation, or anything beyond the close's yes/no handoff: you do
   not interview. Point at `specify`.
-- The confirmation has not been answered "yes": do not read
-  `write-tickets`, and do not act further.
+- The finish-line confirmation (step 2) has not been answered "yes":
+  do not write the spec.
+- The handoff question (step 6) has not been answered "yes": do not
+  read `write-tickets`, and do not act further.
 
 ## The template
 

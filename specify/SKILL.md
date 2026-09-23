@@ -107,7 +107,7 @@ running and why.
 
 ## Asking
 
-> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool —: a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
+> Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool — with a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
 
 ## Do
 
@@ -271,7 +271,9 @@ out of a session, and they land in three places:
 6. **Close with the handoff.** Invite the user to read the record and
    correct the diagrams, then ask (see Asking): "Write the spec now?",
    options "Yes, the record is right; write the spec (Recommended)" /
-   "Something in the record is wrong" / "Stop here". "Something in the
+   "Something in the record is wrong" / "Stop here" / "I don't
+   understand" — the last explains, in plain words, what a spec is and
+   what `write-spec` will do with the record, then asks again. "Something in the
    record is wrong" gets a plain-text follow-up — what is wrong — then
    the record is fixed, the fix committed (`Record: <name>, corrected`),
    and the same question asked again; the interview
@@ -290,7 +292,7 @@ out of a session, and they land in three places:
   that answer is in.
 - More than one question would fit in the form: ask one, wait, then the
   next. Never bundle.
-- A third proposed option seems needed: the question is two questions,
+- A third proposed option seems needed in the interview: the question is two questions,
   so split it, or the third way is one sentence in the question text.
   The standing "I don't understand" option is not a proposal and does
   not count.
@@ -326,7 +328,8 @@ options:
      plain words with a scene per option, then asked again.
 ```
 
-Two proposed options at most; "I don't understand" is always last — the
+In the interview, two proposed options at most (the close's handoff
+question is exempt); "I don't understand" is always last — the
 form's own free-text answer already stands in for "my own answer", so
 it is not a listed option. The recommended option is always first. A yes/no question offers "Yes, as proposed (Recommended)"
 and "No, differently", and the user says how under Other. The question
@@ -477,6 +480,12 @@ Written by `specify` on <date>. Read by `write-spec`.
 
 1. <one decision, in the user's words>
 2. ...
+
+## Invariants
+
+<copied as they stand from the source that carried them, numbered and
+grouped as there, or confirmed by the user in this interview; `None
+settled.` if there are none — never delete the heading>
 
 ## Candidate items
 

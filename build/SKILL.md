@@ -38,9 +38,12 @@ Detect, do not assume. Say what you found before the first change:
   and say so. Every ticket it is blocked by is in `done/`, or stop.
 - Its parent spec, `specs/system.md`, `CONTEXT.md`, `stdlib/` if present.
   The tickets use the glossary's words; so does the code.
-- `PROGRESS.md` at the working-tree root: if present, the steps already
-  ticked are done; start at the first unticked one. If absent, write it
-  from the ticket's Steps, one `- [ ] ` line per step. It is a working
+- `PROGRESS.md` at the working-tree root: if present and its first
+  line is `ticket: <slug>` for this ticket, the steps already ticked are
+  done; start at the first unticked one. Present with any other first
+  line: it belongs to another ticket — stop and say so. If absent, write
+  it: `ticket: <slug>` on the first line, then the ticket's Steps, one
+  `- [ ] ` line per step. It is a working
   file; never commit it — list it in `.git/info/exclude` if nothing
   ignores it yet.
 - The project's CLAUDE.md `## Conventions` section (below). If present,
@@ -133,7 +136,9 @@ with each result; the commands with exit codes; not tested and why; the
 screenshots with one line each on what to look at; the diagrams of the
 code as built, whole, with this ticket's changes highlighted; the
 rounds — the judge's, and the person's requested changes — appended as
-they happen. Regenerated whole after every round; never patched. Commit
+they happen. Regenerated whole by the builder after every round; the
+one edit anyone else makes is the judge's line appended under Rounds,
+which the next regeneration carries over. Commit
 the report and `validation/screenshots/` every time they are written —
 `<type>(<NNNN>): report` — so the tree is clean for the judge and for
 the merge `implement` makes on accept.

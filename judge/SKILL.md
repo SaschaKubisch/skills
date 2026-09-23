@@ -79,8 +79,9 @@ the spec line it breaks or the words "nobody asked for this".
   one finding per line, each with: what is wrong, which step, invariant
   or screenshot it is about, and what would satisfy it. Append the same
   findings to `PROGRESS.md` as unticked lines, `- [ ] judge round <n>:
-  <finding>`, one each — `verdict.md` is committed; `PROGRESS.md` is a
-  working file and is not. The builder works them.
+  <finding>`, one each, and one line per finding to the report's
+  Rounds section; commit `verdict.md` and the report together —
+  `PROGRESS.md` is a working file and is not. The builder works them.
 
 A finding is never "improve", "consider" or "maybe". It names one thing
 that is wrong and one thing that would make it right.
