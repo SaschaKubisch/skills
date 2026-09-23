@@ -28,9 +28,10 @@ from a plain, interactive Claude Code session.
 - **judge** — the method for checking a built ticket: runs every check
   again, reads the diff for softened tests, reads every screenshot
   against its claim, and writes a verdict. Fixes nothing itself.
-- **implement** — the loop that runs one ticket through the builder and
-  the judge until the judge approves, with no round cap but the
-  person's own hand.
+- **implement** — claims one ticket, builds it with the **builder**
+  agent and, with `--judge`, checks it with the **judge** agent in
+  rounds; opens the validation report and lets the person accept it —
+  merged and marked done — request changes, or stop.
 
 ## The flow
 
@@ -38,19 +39,39 @@ from a plain, interactive Claude Code session.
 specify -> write-spec -> write-tickets -> implement
 ```
 
-`specify` settles what is meant and writes an interview record.
-`write-spec` turns that record into a locked spec. `write-tickets` cuts
-the spec into tickets — small enough for one run, each with its own
-exit conditions. `implement` then works one ticket at a time: it hands
-the ticket to a **builder** agent, which follows the **build** skill to
-implement and validate it, and then to a **judge** agent, which follows
-the **judge** skill to check the builder's work without fixing anything
-itself. While the judge requests changes, the builder works its
-findings and the judge checks again — there is no round cap, only the
-person's own hand to stop it. `build` and `judge` are not run on their
-own in this flow; they are the methods `implement`'s two agents follow.
-A person can also type `/build` or `/judge` directly to work or check a
-ticket by hand, outside the loop.
+Each skill in that chain closes by asking the person one question and,
+on yes, reads the next skill's `SKILL.md` at its installed path and
+follows it: `specify` settles what is meant and writes an interview
+record, then asks whether to write the spec now. `write-spec` turns the
+record into a locked spec, then asks whether to cut it into tickets now.
+`write-tickets` cuts the spec into tickets — small enough for one run,
+each with its own exit conditions — then asks whether to start
+implementing the first one now. Any of the three also works typed on
+its own — `/specify`, `/write-spec`, `/write-tickets` — outside the
+chain.
+
+`/implement <slug> [--judge]` then works one ticket: it claims it
+(moving its folder from `backlog/` through `ready/` to `in-progress/`,
+applying the ready gate as it goes), creates or switches to its branch,
+and hands the working copy to a **builder** agent, which follows the
+**build** skill to implement and validate it. With `--judge`, it then
+hands the same working copy to a **judge** agent, which follows the
+**judge** skill to check the builder's work without fixing anything
+itself; while the judge requests changes, the builder works a review
+round on its findings and the judge checks again — no round cap, though
+a round past the third that still has findings stops to ask the person
+how to proceed. `build` and `judge` are not run on their own in this
+flow; they are the methods `implement`'s two agents follow. A person can
+also type `/build` or `/judge` directly to work or check a ticket by
+hand, outside the loop.
+
+`implement` opens the validation report and asks the person to accept
+it: accepting merges the ticket's branch into the base branch with
+`--no-ff`, moves the ticket's folder to `done/`, and offers the next
+ticket on the frontier. The person can instead ask for changes — another
+builder round, and another judge round with `--judge` — or stop without
+accepting, which leaves the ticket in `in-progress/` for `/implement
+<slug>` to resume later.
 
 ## Install
 
