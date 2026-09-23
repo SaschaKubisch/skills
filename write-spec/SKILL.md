@@ -121,6 +121,11 @@ item, not the product.
 runs the ticket applies it, in its own working copy, after a person has
 read it.
 
+**5. Commit the spec.** `git add` the file just written and commit it:
+`Spec: <name>` — the same name the file is written under (`system`, a
+plain topic's slug, or the item's slug). A committed spec is what leaves
+the tree clean for whatever cuts tickets next.
+
 ## Stop when
 
 - A section has no source: no product description, no invariants, or

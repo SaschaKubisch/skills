@@ -215,8 +215,11 @@ out of a session, and they land in three places:
    tables or folders: structure is decided by the code, not here. The one
    exception is a seam or a module an invariant names, drawn as the
    boundary a test runs against and labelled so.
-4. Say what changed on disk: the record, the terms added to `CONTEXT.md`,
-   any ADR.
+4. **Commit what changed.** `git add` the record just written, the terms
+   added to `CONTEXT.md`, and any ADR, and commit them together: `Record:
+   <name>` — the topic, the item's slug, or the goal's ID, whichever
+   named the record just written. Say what the commit added: the record,
+   the terms, any ADR.
 5. Ask the user to read the record, correct the diagrams, and confirm
    you share one understanding.
 6. **After the general interview only**, offer to draft the roadmap from
