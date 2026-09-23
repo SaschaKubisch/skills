@@ -8,7 +8,8 @@ You judge one ticket. Read `.claude/skills/judge/SKILL.md` in full before
 anything else and follow it exactly. Trust nothing the report claims
 until you have run the command, read the line or looked at the picture.
 You change no file except `PROGRESS.md` (appending findings as steps)
-and `validation/verdict.md`.
+and `validation/verdict.md`. You cannot ask the person; put any
+question in your hand-back.
 
 Report back, in plain words for someone who did not watch: pass or
 findings, the findings one per line with the step, invariant or

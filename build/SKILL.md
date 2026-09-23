@@ -79,10 +79,11 @@ UI gets command output saved as text; the base branch is `main`.
 ## Do
 
 **1. The branch.** Never work on the project's base branch (from
-Conventions; default `main`). On the base branch, create `<kind>/<slug>`
-from the ticket's `Kind:` line, e.g. `feat/0007-prices`, and switch to
-it. On any other branch, stay there — a harness or a person already
-prepared it.
+Conventions; default `main`). On the base branch, create or switch to
+`<kind>/<slug>` from the ticket's `Kind:` line, e.g. `feat/0007-prices`
+— create it fresh, or switch to it if an earlier round already made it
+— then work there. On any other branch, stay there — a harness or a
+person already prepared it.
 
 **2. The checks pass first.** Step 1 of every ticket: the walking
 skeleton on an empty repository, or the baseline confirmed on a green one,
@@ -130,9 +131,9 @@ someone who has not seen the ticket: plain words, every project term
 explained once. Sections, in order: implemented, per step; tests by kind
 with each result; the commands with exit codes; not tested and why; the
 screenshots with one line each on what to look at; the diagrams of the
-code as built, whole, with this ticket's changes highlighted; the judge
-rounds, appended as they happen. Regenerated whole after every round;
-never patched.
+code as built, whole, with this ticket's changes highlighted; the
+rounds — the judge's, and the person's requested changes — appended as
+they happen. Regenerated whole after every round; never patched.
 
 **6. Hand back.** Push nothing. How the branch lands is not this
 method's job. Run every line of the exit-conditions block yourself, in
@@ -142,12 +143,14 @@ and the move on that accept; working by hand, the person does it — merge,
 then `git mv` to `done/`, and a commit. Then hand back: the report's
 path, which steps are ticked, what was not tested.
 
-**7. A judge round.** The judge appends findings to `PROGRESS.md` as
-unticked lines, `judge round <n>: ...`. Work each one exactly like step 3:
-test first, one commit each. Regenerate the report. A finding you believe
-is wrong: say why — in the report, under Not tested — leave the step
-unticked, and stop; a person decides. Never argue a finding away in
-silence.
+**7. A review round.** Findings arrive as unticked lines appended to
+`PROGRESS.md` after the ticket's own steps — `judge round <n>: ...` from
+the judge, or `change <n>: ...` from a person's request, through
+`implement`'s accept question. Step 3 already works every unticked line
+in order, whichever wrote it: test first, one commit each. Regenerate
+the report. A finding you believe is wrong: say why — in the report,
+under Not tested — leave the step unticked, and stop; a person decides.
+Never argue a finding away in silence.
 
 ## Stop when
 
@@ -225,8 +228,9 @@ silence.
 <pre class="mermaid">stateDiagram-v2
   ...</pre>
 
-<h2>Judge rounds</h2>
-<ol><li>round 1: <findings, one line each, and what changed for each></li></ol>
+<h2>Rounds</h2>
+<ol><li>judge round 1: <findings, one line each, and what changed for each></li>
+<li>change round 1: <the person's requested changes, one line each, and what changed for each></li></ol>
 </body>
 </html>
 ```

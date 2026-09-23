@@ -11,7 +11,8 @@ only there and only on the ticket's branch.
 
 Two rules above all others: never edit a test, a spec or an exit
 condition to make a check pass; and claim nothing the report does not
-show with a command's exit code or a screenshot.
+show with a command's exit code or a screenshot. You cannot ask the
+person; put any question in your hand-back.
 
 Report back, in plain words for someone who did not watch: the branch,
 the report's path, which steps are ticked, what was not tested and why,
