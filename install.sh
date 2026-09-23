@@ -4,7 +4,7 @@
 #   ./install.sh /path/to/project
 #
 # Copies specify/, write-spec/, write-tickets/, build/, judge/ and
-# implement/ into <project>/.claude/skills/<name>/, LICENSE into
+# implement-ticket/ into <project>/.claude/skills/<name>/, LICENSE into
 # <project>/.claude/skills/LICENSE, and agents/builder.md and
 # agents/judge.md into <project>/.claude/agents/.
 # Existing files or folders with the same names are replaced; nothing
@@ -20,7 +20,7 @@ target="${1:-}"
 here="$(cd "$(dirname "$0")" && pwd)"
 
 mkdir -p "$target/.claude/skills"
-for s in specify write-spec write-tickets build judge implement; do
+for s in specify write-spec write-tickets build judge implement-ticket; do
   rm -rf "$target/.claude/skills/$s"
   cp -R "$here/$s" "$target/.claude/skills/$s"
 done
@@ -33,6 +33,6 @@ done
 
 cat <<EOF
 installed into $target:
-  .claude/skills/specify, write-spec, write-tickets, build, judge, implement, LICENSE
+  .claude/skills/specify, write-spec, write-tickets, build, judge, implement-ticket, LICENSE
   .claude/agents/builder, judge
 EOF

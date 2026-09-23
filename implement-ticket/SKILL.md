@@ -1,18 +1,18 @@
 ---
-name: implement
+name: implement-ticket
 description: The loop for one ticket — `<slug> [--judge]`, typed by a person. Claims it, applying the ready gate as it moves the ticket from backlog to ready to in-progress; creates or switches to its branch; starts the builder agent (Sonnet, the build method) and, only with --judge, the judge agent (Opus, the judge method) afterward — while the judge requests changes the builder works a review round on the findings, then the judge again, no round cap but a question after each judge round from the third on that still has findings. Opens the validation report, then asks the person to accept it (merge --no-ff, move the ticket to done, offer the next frontier ticket), request changes (another builder round), or stop without accepting.
 disable-model-invocation: true
 ---
 
-# Implement
+# Implement ticket
 
 Run one ticket: claim it, build it with the builder agent, judge it with
 the judge agent when asked to, and let the person accept it — merged and
 marked done — or send it back. Typed by a person; it never starts itself.
 
 ```
-/implement 0007-prices
-/implement 0007-prices --judge
+/implement-ticket 0007-prices
+/implement-ticket 0007-prices --judge
 ```
 
 Without `--judge`, the builder alone works the ticket and the person
@@ -125,7 +125,7 @@ number), question "Accept NNNN: merge it and mark it done?", options:
   Free text typed as the answer to the accept question itself is treated
   the same way.
 - "Stop without accepting" — the ticket stays in `in-progress/`, the
-  working copy stays on its branch; say that `/implement <slug>` resumes
+  working copy stays on its branch; say that `/implement-ticket <slug>` resumes
   it.
 
 **7. Accept, in order.** Any failure stops here and says so:

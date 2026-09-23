@@ -245,7 +245,7 @@ out of a session, and they land in three places:
    the topic, the item's slug, or the goal's ID, whichever named the
    record just written. Say what the commit added: the record, the terms,
    any ADR. Every later write in this close is committed the same way, as
-   it happens, so the tree is clean when the chain reaches `implement`.
+   it happens, so the tree is clean when the chain reaches `implement-ticket`.
    Not a git repository: say so and skip every commit in this close.
 5. **After the general interview only**, offer to draft the roadmap from
    `context/system.md`: propose one heading per goal the record implies,

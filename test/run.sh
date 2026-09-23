@@ -33,7 +33,7 @@ mkdir -p "$project"
 }
 rm -f /tmp/install-output.$$
 
-for s in specify write-spec write-tickets build judge implement; do
+for s in specify write-spec write-tickets build judge implement-ticket; do
   check "$here/$s/SKILL.md" "$project/.claude/skills/$s/SKILL.md"
 done
 check "$here/LICENSE" "$project/.claude/skills/LICENSE"
@@ -55,8 +55,8 @@ if "$here/install.sh" "$notadir" >/dev/null 2>&1; then
 fi
 
 # the shared "Asking" paragraph is byte-identical in specify, write-spec,
-# write-tickets and implement
-asking_skills=(specify write-spec write-tickets implement)
+# write-tickets and implement-ticket
+asking_skills=(specify write-spec write-tickets implement-ticket)
 asking_first=""
 for s in "${asking_skills[@]}"; do
   line="$(grep -m1 "^> Every question to the person" "$here/$s/SKILL.md" || true)"

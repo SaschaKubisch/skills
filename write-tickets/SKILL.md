@@ -57,10 +57,10 @@ Detect, do not assume:
 - The branch checked out, and the base branch from the project's
   CLAUDE.md `## Conventions` section (see the build skill). Not on the
   base branch: say so, and ask (see Asking) whether to switch to it
-  before writing — `implement` claims tickets from the base branch, and
+  before writing — `implement-ticket` claims tickets from the base branch, and
   a ticket committed elsewhere is not there to claim. Not a git
   repository: say so; the ticket files are written but nothing is
-  committed, and `implement` cannot run until they are.
+  committed, and `implement-ticket` cannot run until they are.
 - The mirror: `gh auth status`, and a `github project` line under the
   project's CLAUDE.md `## Conventions` section (see the build skill).
   Configured, or not — absent means the mirror is off.
@@ -304,7 +304,7 @@ The files are the tickets; the issues are a view.
 now; I'll start it myself". Where a tool, rather than a person, is what
 moves tickets from `ready/` through `in-progress/`, answer "Not now" and
 let it pick the ticket up. On yes: read
-`.claude/skills/implement/SKILL.md` — the implement skill beside this
+`.claude/skills/implement-ticket/SKILL.md` — the implement-ticket skill beside this
 one, at its installed path — in full, and follow it, with the first
 ticket's slug as its argument.
 
@@ -316,7 +316,7 @@ ticket's slug as its argument.
 - The ticket files are written but not committed: commit them. A ticket
   the gate cannot move is not delivered.
 - A ticket would land in `tickets/ready/`: it does not. This skill never
-  moves a ticket to `ready/` itself — `implement`'s claim does that, or
+  moves a ticket to `ready/` itself — `implement-ticket`'s claim does that, or
   a tool does.
 - An exit condition is prose: it is not an exit condition.
 - A ticket has no `Summary:` line, or one longer than two sentences: fix
@@ -425,11 +425,11 @@ person reads at the run review.
 The **frontier** is every ticket in a `tickets/ready/` or
 `tickets/backlog/` folder, in any item, whose `Blocked by` folders are
 all in a `tickets/done/` folder. That is what can run right now; a
-ticket in `backlog/` passes the ready gate on its way (see `implement`).
+ticket in `backlog/` passes the ready gate on its way (see `implement-ticket`).
 
 - Claim before working: move the folder to `in-progress/`, first thing,
   and commit the move — that is the claim. A mirrored ticket's project
-  Status follows each move (see `implement`).
+  Status follows each move (see `implement-ticket`).
 - AFK tickets on the frontier can run in parallel, one working copy each.
 - HITL tickets wait for a person, however unblocked they are.
 - A purely linear chain has a frontier of one; work top to bottom.

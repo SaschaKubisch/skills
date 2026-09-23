@@ -141,12 +141,12 @@ one edit anyone else makes is the judge's line appended under Rounds,
 which the next regeneration carries over. Commit
 the report and `validation/screenshots/` every time they are written —
 `<type>(<NNNN>): report` — so the tree is clean for the judge and for
-the merge `implement` makes on accept.
+the merge `implement-ticket` makes on accept.
 
 **6. Hand back.** Push nothing. How the branch lands is not this
 method's job. Run every line of the exit-conditions block yourself, in
 order; all exit 0, or stop. The ticket reaches its item's `tickets/done/`
-when the person accepts the report: the `implement` skill does the merge
+when the person accepts the report: the `implement-ticket` skill does the merge
 and the move on that accept; working by hand, the person does it — merge,
 then `git mv` to `done/`, and a commit. Then hand back: the report's
 path, which steps are ticked, what was not tested.
@@ -154,7 +154,7 @@ path, which steps are ticked, what was not tested.
 **7. A review round.** Findings arrive as unticked lines appended to
 `PROGRESS.md` after the ticket's own steps — `judge round <n>: ...` from
 the judge, or `change <n>: ...` from a person's request, through
-`implement`'s accept question. Step 3 already works every unticked line
+`implement-ticket`'s accept question. Step 3 already works every unticked line
 in order, whichever wrote it: test first, one commit each. Regenerate
 the report and commit it, as in step 5. A finding you believe is wrong: say why — in the report,
 under Not tested — leave the step unticked, and stop; a person decides.

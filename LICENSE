@@ -3,7 +3,7 @@ MIT License
 Copyright (c) 2026 Sascha Kubisch
 
 This licence covers the skills in this folder — specify, write-spec,
-write-tickets, build, judge and implement, each a SKILL.md under its own
+write-tickets, build, judge and implement-ticket, each a SKILL.md under its own
 folder — and the builder and judge agent definitions (agents/builder.md
 and agents/judge.md). The skills' Attribution sections name the methods
 adapted from Matt

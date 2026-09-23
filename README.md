@@ -28,7 +28,7 @@ from a plain, interactive Claude Code session.
 - **judge** — the method for checking a built ticket: runs every check
   again, reads the diff for softened tests, reads every screenshot
   against its claim, and writes a verdict. Fixes nothing itself.
-- **implement** — claims one ticket, builds it with the **builder**
+- **implement-ticket** — claims one ticket, builds it with the **builder**
   agent and, with `--judge`, checks it with the **judge** agent in
   rounds; opens the validation report and lets the person accept it —
   merged and marked done — request changes, or stop.
@@ -36,7 +36,7 @@ from a plain, interactive Claude Code session.
 ## The flow
 
 ```
-specify -> write-spec -> write-tickets -> implement
+specify -> write-spec -> write-tickets -> implement-ticket
 ```
 
 Each skill in that chain closes by asking the person one question and,
@@ -50,7 +50,7 @@ implementing the first one now. Any of the three also works typed on
 its own — `/specify`, `/write-spec`, `/write-tickets` — outside the
 chain.
 
-`/implement <slug> [--judge]` then works one ticket: it claims it
+`/implement-ticket <slug> [--judge]` then works one ticket: it claims it
 (moving its folder from `backlog/` through `ready/` to `in-progress/`,
 applying the ready gate as it goes), creates or switches to its branch,
 and hands the working copy to a **builder** agent, which follows the
@@ -61,16 +61,16 @@ itself; while the judge requests changes, the builder works a review
 round on its findings and the judge checks again — no round cap, though
 every judge round from the third on that still has findings stops to
 ask the person how to proceed. `build` and `judge` are not run on their own in this
-flow; they are the methods `implement`'s two agents follow. A person can
+flow; they are the methods `implement-ticket`'s two agents follow. A person can
 also type `/build` or `/judge` directly to work or check a ticket by
 hand, outside the loop.
 
-`implement` opens the validation report and asks the person to accept
+`implement-ticket` opens the validation report and asks the person to accept
 it: accepting merges the ticket's branch into the base branch with
 `--no-ff`, moves the ticket's folder to `done/`, and offers the next
 ticket on the frontier. The person can instead ask for changes — another
 builder round, and another judge round with `--judge` — or stop without
-accepting, which leaves the ticket in `in-progress/` for `/implement
+accepting, which leaves the ticket in `in-progress/` for `/implement-ticket
 <slug>` to resume later.
 
 ## Install
@@ -80,7 +80,7 @@ accepting, which leaves the ticket in `in-progress/` for `/implement
 ```
 
 This copies `specify/`, `write-spec/`, `write-tickets/`, `build/`,
-`judge/` and `implement/` into `<project>/.claude/skills/<name>/`,
+`judge/` and `implement-ticket/` into `<project>/.claude/skills/<name>/`,
 `LICENSE` into `<project>/.claude/skills/LICENSE`, and
 `agents/builder.md` and `agents/judge.md` into
 `<project>/.claude/agents/`. It replaces files with the same names and
