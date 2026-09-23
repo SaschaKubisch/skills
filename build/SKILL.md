@@ -133,7 +133,10 @@ with each result; the commands with exit codes; not tested and why; the
 screenshots with one line each on what to look at; the diagrams of the
 code as built, whole, with this ticket's changes highlighted; the
 rounds — the judge's, and the person's requested changes — appended as
-they happen. Regenerated whole after every round; never patched.
+they happen. Regenerated whole after every round; never patched. Commit
+the report and `validation/screenshots/` every time they are written —
+`<type>(<NNNN>): report` — so the tree is clean for the judge and for
+the merge `implement` makes on accept.
 
 **6. Hand back.** Push nothing. How the branch lands is not this
 method's job. Run every line of the exit-conditions block yourself, in
@@ -148,7 +151,7 @@ path, which steps are ticked, what was not tested.
 the judge, or `change <n>: ...` from a person's request, through
 `implement`'s accept question. Step 3 already works every unticked line
 in order, whichever wrote it: test first, one commit each. Regenerate
-the report. A finding you believe is wrong: say why — in the report,
+the report and commit it, as in step 5. A finding you believe is wrong: say why — in the report,
 under Not tested — leave the step unticked, and stop; a person decides.
 Never argue a finding away in silence.
 

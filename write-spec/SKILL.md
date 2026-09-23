@@ -1,6 +1,18 @@
 ---
 name: write-spec
-description: Turn an interview record (context/<topic>.md, or items/<slug>/context/<slug>.md for an item) and the sources it names into a spec — specs/system.md for the whole product, specs/<topic>.md for one topic, items/<slug>/specs/<slug>.md for an item — the locked, word-for-word record of what must be true, with a finish line of commands. Pass the record, or source files; with nothing, it finds the sources by reading. Looks at the repository first and uses its names; never overwrites a locked spec. No interview, no invention: copies the brief, entities and invariants verbatim, proposes the exit-condition commands from the sources' criteria and asks once, and stops rather than guesses when something is missing. Use after specify, before write-tickets.
+description: >-
+  Turn an interview record (context/<topic>.md, or
+  items/<slug>/context/<slug>.md for an item) and the sources it names
+  into a spec — specs/system.md for the whole product, specs/<topic>.md
+  for one topic, items/<slug>/specs/<slug>.md for an item — the locked,
+  word-for-word record of what must be true, with a finish line of
+  commands. Pass the record, or source files; with nothing, it finds the
+  sources by reading. Looks at the repository first and uses its names;
+  never overwrites a locked spec. No interview, no invention: copies the
+  brief, entities and invariants verbatim, proposes the exit-condition
+  commands from the sources' criteria and asks once, and stops rather
+  than guesses when something is missing. Use after specify, before
+  write-tickets.
 disable-model-invocation: true
 ---
 

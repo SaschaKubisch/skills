@@ -71,8 +71,10 @@ the spec line it breaks or the words "nobody asked for this".
 - **Pass**: nothing found. Write one paragraph to `validation/verdict.md`
   and commit it: what was checked, what the commands returned, how many
   screenshots were read. Append `- [x] judge round <n>: pass` to
-  `PROGRESS.md` and to the report's Judge rounds — `verdict.md` is
-  committed; `PROGRESS.md` is a working file and is not.
+  `PROGRESS.md` and to the report's Rounds section, and commit
+  `verdict.md` and the report together — `PROGRESS.md` is a working
+  file and is not committed. The accept that follows merges from a
+  clean tree.
 - **Findings**: append the same to `validation/verdict.md` and commit it,
   one finding per line, each with: what is wrong, which step, invariant
   or screenshot it is about, and what would satisfy it. Append the same
@@ -89,7 +91,7 @@ that is wrong and one thing that would make it right.
 - A command in the exit conditions cannot run on this machine: say which
   and why; do not pass it.
 - You are about to change a file that is not `PROGRESS.md`, the verdict,
-  or the report's Judge rounds section: do not. The judge fixes nothing.
+  or the report's Rounds section: do not. The judge fixes nothing.
 - The ticket asks for a person's judgement that is not yours to make, a
   design preference, a credential: say so and stop, for a person to
   decide.

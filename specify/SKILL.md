@@ -1,6 +1,24 @@
 ---
 name: specify
-description: Interview the user about a brief, a feature or a whole product until nothing is left silently assumed, one question at a time through the answer form, up to two proposed options, one of them recommended, then always "I don't understand", which earns a plain explanation with examples before the question is asked again; the user can always answer in their own words instead. Three entries: the general interview on an empty repository; the goal interview, scoped to one roadmap goal; the item interview, reading items/<slug>/brief.md. Writes the project's vocabulary into CONTEXT.md and its hard decisions into docs/adr/ as they settle, and everything else it settled into an interview record — context/<topic>.md, or items/<slug>/context/<slug>.md for an item — at the close. Draws the settled thing as diagrams at the close, in the record, for the user to correct. Offered afterward, drafts headings and After lines into roadmap.md, only once the user says yes, and nothing under goals/ or items/. What the user cannot settle is recorded as an open decision, in their words. Writes no spec — write-spec does that next, from the record. Type it; the model never starts it on its own.
+description: >-
+  Interview the user about a brief, a feature or a whole product until
+  nothing is left silently assumed, one question at a time through the
+  answer form, up to two proposed options, one of them recommended, then
+  always "I don't understand", which earns a plain explanation with
+  examples before the question is asked again; the user can always
+  answer in their own words instead. Three entries: the general
+  interview on an empty repository; the goal interview, scoped to one
+  roadmap goal; the item interview, reading items/<slug>/brief.md.
+  Writes the project's vocabulary into CONTEXT.md and its hard decisions
+  into docs/adr/ as they settle, and everything else it settled into an
+  interview record — context/<topic>.md, or
+  items/<slug>/context/<slug>.md for an item — at the close. Draws the
+  settled thing as diagrams at the close, in the record, for the user to
+  correct. Offered afterward, drafts headings and After lines into
+  roadmap.md, only once the user says yes, and nothing under goals/ or
+  items/. What the user cannot settle is recorded as an open decision,
+  in their words. Writes no spec — write-spec does that next, from the
+  record. Type it; the model never starts it on its own.
 disable-model-invocation: true
 ---
 
@@ -220,10 +238,15 @@ out of a session, and they land in three places:
    exception is a seam or a module an invariant names, drawn as the
    boundary a test runs against and labelled so.
 4. **Commit what changed.** `git add` the record just written, the terms
-   added to `CONTEXT.md`, and any ADR, and commit them together: `Record:
-   <name>` — the topic, the item's slug, or the goal's ID, whichever
-   named the record just written. Say what the commit added: the record,
-   the terms, any ADR.
+   added to `CONTEXT.md`, any ADR, the item's `brief.md` if this session
+   wrote it, and `roadmap.md` if the goal interview rewrote its heading,
+   and commit exactly those paths together — `git commit -- <paths>`, so
+   nothing the user had already staged rides along: `Record: <name>` —
+   the topic, the item's slug, or the goal's ID, whichever named the
+   record just written. Say what the commit added: the record, the terms,
+   any ADR. Every later write in this close is committed the same way, as
+   it happens, so the tree is clean when the chain reaches `implement`.
+   Not a git repository: say so and skip every commit in this close.
 5. **After the general interview only**, offer to draft the roadmap from
    `context/system.md`: propose one heading per goal the record implies,
    each with its `After:` line where one goal's work depends on
@@ -231,7 +254,8 @@ out of a session, and they land in three places:
    the answer form (a yes/no question, see Formats). Write nothing until
    the user says yes. On yes, append the headings, their `After:` lines
    and their paragraphs to `roadmap.md` (creating it if needed) — **and
-   nothing else**: no `goals/<ID>.md`, no `items/`. Each heading is a
+   nothing else**: no `goals/<ID>.md`, no `items/` — and commit it:
+   `Roadmap: draft from <name>`. Each heading is a
    draft until its own goal interview gives it a record. On no, or a
    changed proposal, redraft and ask again; the record itself is
    unchanged either way. Every heading is written **exactly**
@@ -249,7 +273,8 @@ out of a session, and they land in three places:
    options "Yes, the record is right; write the spec (Recommended)" /
    "Something in the record is wrong" / "Stop here". "Something in the
    record is wrong" gets a plain-text follow-up — what is wrong — then
-   the record is fixed and the same question asked again; the interview
+   the record is fixed, the fix committed (`Record: <name>, corrected`),
+   and the same question asked again; the interview
    is not otherwise reopened. "Stop here" ends the skill; the record
    stands as written. On yes: read `.claude/skills/write-spec/SKILL.md`
    — the write-spec skill beside this one, at its installed path — in
