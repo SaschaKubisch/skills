@@ -33,14 +33,27 @@ holds `ticket.md` and `validation/`.
   skill), and any earlier `judge round` findings already in `PROGRESS.md`.
 - Which round this is: one more than the highest `judge round <n>` line
   already in `PROGRESS.md`.
+- The project's workflow config (see the build skill's Conventions
+  section): `.claude/workflow.yml`, or every default when it and the
+  `workflow config` key are both absent. This method reads
+  `evidence_check`, `judge_findings`, `evidence_recheck` and
+  `share_suite_result` from it.
 
 ## Do
 
-**1. Run everything again.** Every command in the ticket's exit-condition
-block, and the checks and end-to-end command from Conventions (see the
-build skill), yourself, in the worktree. Compare each exit code with the
-report's table. A claimed pass that fails here is a finding; so is a
-command the report does not list.
+**1. Run everything again.** With `evidence_check: script` (default),
+run `node build/scripts/check-evidence.mjs <ticket-folder>` first — every
+line it prints is a finding, labelled `evidence` (see step 6). Then every
+command in the ticket's exit-condition block, and the checks from
+Conventions, yourself, in the worktree, comparing each exit code with the
+report's table; a claimed pass that fails here is a finding, so is a
+command the report does not list. The end-to-end command, the same way,
+unless `share_suite_result: true` (default) and `validation/suite-runs.json`
+already records a whole-suite run — see the build skill — for the exact
+commit under test; then trust that recorded run instead of running it
+again. Every command runs in the foreground with a timeout long enough
+to finish, per `background_waits` (default `foreground`); never write a
+sleep loop to poll for one's result.
 
 **2. Read the diff for softening.** A test deleted, skipped, marked
 `.only`, weakened, or with its assertion commented; a spec, a ticket's
@@ -59,7 +72,9 @@ build skill) exists for every walkthrough screen, or that is a finding.
 step has a test named for its proves clause, or a line under Not tested
 with a reason you accept. Every invariant under Invariants this touches
 has an end-to-end test with a screenshot where a frontend exists. Every
-line under Not tested is a real reason, not a way out.
+line under Not tested is a real reason, not a way out. Every line in the
+build skill's `## Checklist` section is satisfied, or is a finding tied
+to what that line protects.
 
 **5. Read the built thing as a user.** Walk the flow the ticket delivers
 in a browser or at the command line, once, without the tests. Something
@@ -75,13 +90,25 @@ the spec line it breaks or the words "nobody asked for this".
   `verdict.md` and the report together — `PROGRESS.md` is a working
   file and is not committed. The accept that follows merges from a
   clean tree.
-- **Findings**: append the same to `validation/verdict.md` and commit it,
-  one finding per line, each with: what is wrong, which step, invariant
-  or screenshot it is about, and what would satisfy it. Append the same
-  findings to `PROGRESS.md` as unticked lines, `- [ ] judge round <n>:
+- **Findings**: label each one `behaviour` or `evidence` first —
+  `evidence` is about what is shown (a screenshot, the report, a name);
+  `behaviour` is about what the code does. Append the same to
+  `validation/verdict.md` and commit it, one finding per line, each with
+  its label: what is wrong, which step, invariant or screenshot it is
+  about, and what would satisfy it. Append the same findings to
+  `PROGRESS.md` as unticked lines, `- [ ] judge round <n>: <label>:
   <finding>`, one each, and one line per finding to the report's
   Rounds section; commit `verdict.md` and the report together —
   `PROGRESS.md` is a working file and is not. The builder works them.
+
+With `judge_findings: split` (default) and every finding of this round
+labelled `evidence`, say so in `verdict.md`: `implement-ticket` runs the
+builder's fix, then, with `evidence_recheck: short-pass` (default), a
+short recheck instead of a full round — `check-evidence.mjs` plus reading
+only the changed screenshots and report sections, on the model
+`models.evidence` names (see the build skill's workflow config). A round
+mixing `behaviour` findings with `evidence` ones, or `judge_findings:
+all-blocking`, gets a full judge round regardless.
 
 A finding is never "improve", "consider" or "maybe". It names one thing
 that is wrong and one thing that would make it right.
