@@ -24,7 +24,8 @@ from a plain, interactive Claude Code session.
   implementing method; any can work the tickets.
 - **build** — the method for working one ticket to done: a branch, one
   test per step, validation from cheapest check to end to end, and a
-  self-contained HTML report.
+  self-contained HTML report, checked against the ticket by a script
+  before hand-back.
 - **judge** — the method for checking a built ticket: runs every check
   again, reads the diff for softened tests, reads every screenshot
   against its claim, and writes a verdict. Fixes nothing itself.
@@ -108,10 +109,12 @@ and never changes it.
 
 This copies `specify/`, `write-spec/`, `write-tickets/`, `build/`,
 `judge/` and `implement-ticket/` into `<project>/.claude/skills/<name>/`,
-`LICENSE` into `<project>/.claude/skills/LICENSE`, and
+`LICENSE` into `<project>/.claude/skills/LICENSE`,
 `agents/builder.md` and `agents/judge.md` into
-`<project>/.claude/agents/`. It replaces files with the same names and
-touches nothing else in the project.
+`<project>/.claude/agents/`, and the default `workflow.yml` into
+`<project>/.claude/workflow.yml` — only when the project has none there
+yet. It replaces files with the same names, never overwrites a project's
+own `workflow.yml`, and touches nothing else in the project.
 
 Without the script, copy the same folders by hand into the same places.
 
@@ -122,7 +125,7 @@ Without the script, copy the same folders by hand into the same places.
 ```
 
 This copies only `specify/`, `write-spec/`, `write-tickets/` and
-`LICENSE`, and no agents. The planning skills need nothing else. Work
+`LICENSE`, and no agents and no `workflow.yml`. The planning skills need nothing else. Work
 the tickets by any method: the exit
 conditions under `## Exit conditions` decide done, and the ready gate
 described in `write-tickets` decides when a ticket may start.
@@ -132,10 +135,10 @@ described in `write-tickets` decides when a ticket may start.
 `build`, `write-tickets` and `judge` all read one section of the
 project's own `CLAUDE.md` for the facts specific to that project — its
 base branch, its checks, how it runs end to end, how it takes
-screenshots, and whether a GitHub project mirrors its tickets. Add it
-once, or let `write-tickets` propose it the first time it runs. The
-`screenshots` key is the build method's own; `write-tickets` defines
-the other four:
+screenshots, its workflow config, and whether a GitHub project mirrors
+its tickets. Add it once, or let `write-tickets` propose it the first
+time it runs. The `screenshots` and `workflow config` keys are the
+build method's own; `write-tickets` defines the other four:
 
 ```
 ## Conventions
@@ -143,12 +146,26 @@ the other four:
 - checks (cheapest first): npm run lint; npx tsc --noEmit; npm test; npm run build
 - end to end: npx playwright test
 - screenshots: Playwright, 1280x800 and 390x844, saved per test
+- workflow config: .claude/workflow.yml
 - github project: <name, or none>
 ```
 
 If the section is missing, the skills detect what they can from the
 project (`package.json`, a `Makefile`, CI config) and write it in, so
 later tickets do not detect it again.
+
+## Workflow config
+
+`.claude/workflow.yml` tunes how `build`, `judge` and `implement-ticket`
+work in a project — evidence checking, how findings and rechecks split
+between behaviour and evidence, the report's source, when screenshots
+are captured and at what sizes, the end-to-end server and worker count,
+sharing a recorded whole-suite result, skipping an already-judged
+baseline, running everything in the foreground, working tickets in
+parallel, and which model each agent runs on. `install.sh` copies a
+starting file, never over a project's own; every key it leaves out takes
+its default. See `build/SKILL.md`'s "The workflow config" section for
+every key, its default, and what it changes.
 
 ## Licence
 
