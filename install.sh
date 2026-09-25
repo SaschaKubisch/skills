@@ -6,12 +6,14 @@
 #
 # Without --planning: copies specify/, write-spec/, write-tickets/, build/,
 # judge/ and implement-ticket/ into <project>/.claude/skills/<name>/,
-# LICENSE into <project>/.claude/skills/LICENSE, and agents/builder.md and
-# agents/judge.md into <project>/.claude/agents/.
+# LICENSE into <project>/.claude/skills/LICENSE, agents/builder.md and
+# agents/judge.md into <project>/.claude/agents/, and the default
+# workflow.yml into <project>/.claude/workflow.yml — only when the
+# project has none there yet; an existing one is never overwritten.
 # With --planning: copies only specify/, write-spec/ and write-tickets/
 # into <project>/.claude/skills/<name>/ and LICENSE into
-# <project>/.claude/skills/LICENSE; no agents are copied and no
-# .claude/agents directory is created.
+# <project>/.claude/skills/LICENSE; no agents and no workflow.yml are
+# copied, since the planning skills read neither.
 # Existing files or folders with the same names are replaced; nothing
 # else under the target is touched.
 # Licence: MIT, see LICENSE.
@@ -60,6 +62,9 @@ if [[ "$planning" -eq 0 ]]; then
   for a in builder judge; do
     cp "$here/agents/$a.md" "$target/.claude/agents/$a.md"
   done
+  if [[ ! -e "$target/.claude/workflow.yml" ]]; then
+    cp "$here/workflow.yml" "$target/.claude/workflow.yml"
+  fi
 fi
 
 if [[ "$planning" -eq 1 ]]; then
@@ -72,5 +77,6 @@ else
 installed into $target:
   .claude/skills/specify, write-spec, write-tickets, build, judge, implement-ticket, LICENSE
   .claude/agents/builder, judge
+  .claude/workflow.yml (only if the project had none)
 EOF
 fi
