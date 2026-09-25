@@ -1,0 +1,27 @@
+{
+  "ticket": "0002-another-sample",
+  "title": "Another sample ticket",
+  "spec": "None yet",
+  "branch": "feat/0002-another-sample",
+  "started": "2026-01-02T10:00:00Z",
+  "ended": "2026-01-02T11:00:00Z",
+  "ended_by": "exit conditions passed",
+  "steps": [
+    { "n": 1, "summary": "the checks pass, confirmed on a green baseline" },
+    { "n": 2, "summary": "the second widget appears on the page" },
+    { "n": 3, "summary": "the widget passes an accessibility check" }
+  ],
+  "tests": [
+    { "kind": "end to end", "name": "widget-a11y.spec.ts", "proves": "D1 of specs/design.md", "result": "pass", "evidence": "invariant-d1-widget-a11y-1280x800.png" }
+  ],
+  "not_tested": [],
+  "commands": [
+    { "command": "npm run lint", "exit_code": 0, "commit": "def5678", "whole_suite": false },
+    { "command": "npm test", "exit_code": 0, "commit": "def5678", "whole_suite": true }
+  ],
+  "screenshots": [
+    { "file": "invariant-d1-widget-a11y", "claim": "invariant D1: the widget is accessible", "sizes": ["1280x800", "390x844"] }
+  ],
+  "rounds": [],
+  "diagrams": []
+}

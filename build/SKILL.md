@@ -175,7 +175,10 @@ names):
   size. Named `walkthrough-<NN>-<screen>.png`.
 - **One test per invariant the ticket touches**, named
   `invariant-<NN>-<slug>`, with a shot at the moment the invariant is
-  observed. Under Invariants this touches, every line has a test.
+  observed. A touched invariant is any under Invariants this touches, or
+  any a step's `proves:` clause names (a number next to the word
+  "invariant"/"invariants", or a letter-number id like `D1` on its own,
+  as `specs/design.md`'s invariants are named) — every one has a test.
 - **One test per exit condition a screen can observe**, named
   `exit-<NN>-<slug>`, with its shot.
 

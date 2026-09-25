@@ -33,11 +33,18 @@ function check(condition, message) {
   }
 }
 
-// The passing fixture exits 0 and says PASS.
-{
-  const { code, out } = run(checkEvidence, join(fixturesDir, "passing", "ticket"));
-  check(code === 0, `check-evidence.mjs should exit 0 on the passing fixture (got ${code})`);
-  check(out.includes("PASS"), "check-evidence.mjs should print PASS on the passing fixture");
+// Every passing fixture exits 0 and says PASS.
+const passingFixtures = [
+  "passing",
+  // an invariant named only in a step's proves clause (not under
+  // "## Invariants this touches") still counts as touched.
+  "passing-invariant-via-proves",
+];
+
+for (const fixture of passingFixtures) {
+  const { code, out, err } = run(checkEvidence, join(fixturesDir, fixture, "ticket"));
+  check(code === 0, `check-evidence.mjs should exit 0 on ${fixture} (got ${code}):\n${err}`);
+  check(out.includes("PASS"), `check-evidence.mjs should print PASS on ${fixture}`);
 }
 
 // Each failing fixture exits 1 and names its own rule, no other.

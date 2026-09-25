@@ -20,6 +20,7 @@ import {
   readConventions,
   screenshotSizes,
   readTicket,
+  normalizeInvariantId,
 } from "./lib/workflow.mjs";
 
 function globToRegExp(glob) {
@@ -82,8 +83,7 @@ function main() {
   for (const file of actualFiles) {
     const m = /^invariant-([A-Za-z0-9]+)-/.exec(file);
     if (!m) continue;
-    const raw = m[1].toLowerCase();
-    const id = /^\d+$/.test(raw) ? String(Number(raw)) : raw;
+    const id = normalizeInvariantId(m[1]);
     if (!ticket.invariantIds.has(id)) {
       problems.push(
         `invariant-evidence: ${file} names invariant ${m[1]}, which is not under the ticket's Invariants this touches.`,

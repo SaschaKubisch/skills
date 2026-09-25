@@ -170,12 +170,46 @@ function countExitConditions(text) {
     .filter((l) => l.length > 0).length;
 }
 
+// An invariant identifier, normalized so "D1", "d1" and "01" (when it is
+// purely numeric) all compare equal: lowercased, and a purely numeric id
+// has its leading zeros stripped.
+export function normalizeInvariantId(raw) {
+  const lower = raw.toLowerCase();
+  return /^\d+$/.test(lower) ? String(Number(lower)) : lower;
+}
+
+// The invariant identifiers this ticket touches: the union of the
+// bullets under "## Invariants this touches" and every id named in a
+// step's `proves:` clause, since a step may prove a design invariant
+// ("proves: D1, D4 of specs/design.md") that section never lists. A
+// letter-number token (D1, D4) in a proves clause always counts; a bare
+// number only counts there next to the word "invariant"/"invariants"
+// ("proves: invariants 6, 11, 14") — a bare number alone is as likely a
+// spec line number ("proves: settled lines 6, 22") as an invariant.
 function touchedInvariantIds(text) {
-  const body = sectionBody(text, "## Invariants this touches");
   const ids = new Set();
-  for (const line of body.split("\n")) {
+
+  const section = sectionBody(text, "## Invariants this touches");
+  for (const line of section.split("\n")) {
     const m = /^-\s*([A-Za-z]?\d+)[.:,]/.exec(line.trim());
-    if (m) ids.add(m[1].toLowerCase());
+    if (m) ids.add(normalizeInvariantId(m[1]));
   }
+
+  const steps = sectionBody(text, "## Steps");
+  for (const line of steps.split("\n")) {
+    const m = /proves:\s*(.*)$/i.exec(line);
+    if (!m) continue;
+    const clause = m[1];
+    for (const idm of clause.matchAll(/\b([A-Za-z]\d+)\b/g)) {
+      ids.add(normalizeInvariantId(idm[1]));
+    }
+    const invariantWord = /invariants?\s+([\d,\s]*\d)/i.exec(clause);
+    if (invariantWord) {
+      for (const n of invariantWord[1].match(/\d+/g) || []) {
+        ids.add(normalizeInvariantId(n));
+      }
+    }
+  }
+
   return ids;
 }
