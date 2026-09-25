@@ -178,6 +178,9 @@ if [[ "$fail" -eq 0 ]]; then
   echo "PASS: install.sh copies every file byte-identical, refuses a bad target, --planning copies only the planning skills and refuses unknown flags, workflow.yml lands and is never overwritten, build/SKILL.md and README.md's Conventions blocks match, and write-tickets/SKILL.md's Conventions block is a subset of build's"
 fi
 
+# the shared workflow config reader, on its own
+node "$here/test/workflow-lib.test.mjs" || fail=1
+
 # the evidence and report scripts, against their fixtures
 node "$here/test/scripts.test.mjs" || fail=1
 

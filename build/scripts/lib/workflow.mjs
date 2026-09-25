@@ -23,9 +23,11 @@ export const defaultConfig = {
 };
 
 // Reads the flat, one-key-per-line YAML this project's workflow.yml uses:
-// comments after "#", a list as [] or [a, b, c], and one inline map,
-// { k: v, k: v }. Not a general YAML reader — it only needs to read the
-// shape workflow.yml is written in.
+// comments after "#", a list as [] or [a, b, c], one inline map,
+// { k: v, k: v }, and a value or list item optionally wrapped in one
+// matching pair of single or double quotes (stripped on read; a bare
+// glob like *kitchen* needs none). Not a general YAML reader — it only
+// needs to read the shape workflow.yml is written in.
 export function parseYaml(text) {
   const config = {};
   for (const rawLine of text.split("\n")) {
@@ -44,11 +46,27 @@ export function parseYaml(text) {
   return config;
 }
 
+// Strips one matching pair of surrounding single or double quotes, if
+// there is one; otherwise returns the string unchanged.
+function stripQuotes(s) {
+  if (
+    s.length >= 2 &&
+    ((s[0] === '"' && s[s.length - 1] === '"') ||
+      (s[0] === "'" && s[s.length - 1] === "'"))
+  ) {
+    return s.slice(1, -1);
+  }
+  return s;
+}
+
 function parseScalarOrList(value) {
   if (value.startsWith("[") && value.endsWith("]")) {
     const inner = value.slice(1, -1).trim();
     if (!inner) return [];
-    return inner.split(",").map((s) => s.trim()).filter(Boolean);
+    return inner
+      .split(",")
+      .map((s) => stripQuotes(s.trim()))
+      .filter((s) => s.length > 0);
   }
   if (value.startsWith("{") && value.endsWith("}")) {
     const inner = value.slice(1, -1).trim();
@@ -57,16 +75,17 @@ function parseScalarOrList(value) {
     for (const pair of inner.split(",")) {
       const colon = pair.indexOf(":");
       if (colon === -1) continue;
-      const k = pair.slice(0, colon).trim();
-      const v = pair.slice(colon + 1).trim();
+      const k = stripQuotes(pair.slice(0, colon).trim());
+      const v = stripQuotes(pair.slice(colon + 1).trim());
       if (k) map[k] = v;
     }
     return map;
   }
-  if (value === "true") return true;
-  if (value === "false") return false;
-  if (/^-?\d+$/.test(value)) return Number(value);
-  return value;
+  const scalar = stripQuotes(value);
+  if (scalar === "true") return true;
+  if (scalar === "false") return false;
+  if (/^-?\d+$/.test(scalar)) return Number(scalar);
+  return scalar;
 }
 
 // Walks up from `startPath` looking for the project root: the nearest
