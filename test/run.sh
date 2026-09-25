@@ -108,8 +108,11 @@ if "$here/install.sh" --bogus "$tmp/does-not-matter" >/dev/null 2>&1; then
   fail=1
 fi
 
-# the fenced Conventions block is byte-identical in build/SKILL.md,
-# write-tickets/SKILL.md and README.md
+# the fenced Conventions block: build/SKILL.md and README.md carry the
+# full block and must be byte-identical to each other; write-tickets/SKILL.md
+# carries a subset (it has no `screenshots` key, which is the build method's
+# own) so every line of its block must appear verbatim, somewhere, in
+# build's block
 extract_conventions() {
   awk '
     capture {
@@ -122,25 +125,41 @@ extract_conventions() {
   ' "$1"
 }
 
-conventions_files=(build/SKILL.md write-tickets/SKILL.md README.md)
-conventions_first=""
-for f in "${conventions_files[@]}"; do
-  block="$(extract_conventions "$here/$f")"
-  if [[ -z "$block" ]]; then
-    echo "FAIL: $f has no fenced Conventions block" >&2
-    fail=1
-    continue
-  fi
-  if [[ -z "$conventions_first" ]]; then
-    conventions_first="$block"
-  elif [[ "$block" != "$conventions_first" ]]; then
-    echo "FAIL: $f's Conventions block differs from build/SKILL.md's" >&2
-    fail=1
-  fi
-done
+build_conventions="$(extract_conventions "$here/build/SKILL.md")"
+readme_conventions="$(extract_conventions "$here/README.md")"
+write_tickets_conventions="$(extract_conventions "$here/write-tickets/SKILL.md")"
+
+if [[ -z "$build_conventions" ]]; then
+  echo "FAIL: build/SKILL.md has no fenced Conventions block" >&2
+  fail=1
+fi
+if [[ -z "$readme_conventions" ]]; then
+  echo "FAIL: README.md has no fenced Conventions block" >&2
+  fail=1
+fi
+if [[ -z "$write_tickets_conventions" ]]; then
+  echo "FAIL: write-tickets/SKILL.md has no fenced Conventions block" >&2
+  fail=1
+fi
+
+if [[ -n "$build_conventions" && -n "$readme_conventions" \
+      && "$readme_conventions" != "$build_conventions" ]]; then
+  echo "FAIL: README.md's Conventions block differs from build/SKILL.md's" >&2
+  fail=1
+fi
+
+if [[ -n "$build_conventions" && -n "$write_tickets_conventions" ]]; then
+  while IFS= read -r line; do
+    if ! grep -qxF -- "$line" <<<"$build_conventions"; then
+      echo "FAIL: write-tickets/SKILL.md's Conventions block has a line not found in build/SKILL.md's: $line" >&2
+      fail=1
+      break
+    fi
+  done <<<"$write_tickets_conventions"
+fi
 
 if [[ "$fail" -eq 0 ]]; then
-  echo "PASS: install.sh copies every file byte-identical, refuses a bad target, --planning copies only the planning skills and refuses unknown flags, and the Conventions block matches across build, write-tickets and README"
+  echo "PASS: install.sh copies every file byte-identical, refuses a bad target, --planning copies only the planning skills and refuses unknown flags, build/SKILL.md and README.md's Conventions blocks match, and write-tickets/SKILL.md's Conventions block is a subset of build's"
 fi
 
 exit "$fail"

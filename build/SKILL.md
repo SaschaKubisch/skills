@@ -71,9 +71,9 @@ Codex mirror), a fixed set of bullet keys:
 - github project: <name, or none>
 ```
 
-`write-tickets` and `judge` read it the same way this method does;
-`write-tickets` carries the same block, byte for byte, so it needs no
-build skill to propose one. When
+`write-tickets` and `judge` read it the same way this method does.
+`write-tickets` defines every key here except `screenshots`, which is
+this method's own. When
 it is missing: detect what it would say — `package.json`, a `Makefile`,
 CI config for the checks; a UI or not, and which kind, for the
 screenshot method — then write it in, so the next ticket does not

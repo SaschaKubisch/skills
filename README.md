@@ -20,9 +20,8 @@ from a plain, interactive Claude Code session.
   word-for-word statement of what must be true, with a finish line of
   runnable commands.
 - **write-tickets** — cuts a spec into tickets: vertical slices sized to
-  one run, each with its steps and its exit conditions. With `build` and
-  `judge` installed, each ticket also ends in a validation report and a
-  judge's verdict.
+  one run, each with its steps and its exit conditions. Names no
+  implementing method; any can work the tickets.
 - **build** — the method for working one ticket to done: a branch, one
   test per step, validation from cheapest check to end to end, and a
   self-contained HTML report.
@@ -37,21 +36,23 @@ from a plain, interactive Claude Code session.
 ## The flow
 
 ```
-specify -> write-spec -> write-tickets -> implement-ticket
+planning:  specify -> write-spec -> write-tickets
+building:  implement-ticket (build, judge)
 ```
 
-Each skill in that chain closes by asking the person one question and,
-on yes, reads the next skill's `SKILL.md` at its installed path and
-follows it: `specify` settles what is meant and writes an interview
-record, then asks whether to write the spec now. `write-spec` turns the
-record into a locked spec, then asks whether to cut it into tickets now.
+The planning skills know nothing of the building skills. `specify` and
+`write-spec` each close by asking the person one question and, on yes,
+read the next skill's `SKILL.md` at its installed path and follow it:
+`specify` settles what is meant and writes an interview record, then
+asks whether to write the spec now. `write-spec` turns the record into a
+locked spec, then asks whether to cut it into tickets now.
 `write-tickets` cuts the spec into tickets — small enough for one run,
-each with its own exit conditions — then asks whether to start
-implementing the first one now. Any of the three also works typed on
-its own — `/specify`, `/write-spec`, `/write-tickets` — outside the
-chain.
+each with its own exit conditions — names the first one, and stops. Any
+of the three also works typed on its own — `/specify`, `/write-spec`,
+`/write-tickets` — outside the chain.
 
-`/implement-ticket <slug> [--judge]` then works one ticket: it claims it
+The person then starts the building side. `/implement-ticket <slug>
+[--judge]` works one ticket: it claims it
 (moving its folder from `backlog/` to `in-progress/`, applying the ready
 gate first), creates or switches to its branch,
 and hands the working copy to a **builder** agent, which follows the
@@ -121,11 +122,8 @@ Without the script, copy the same folders by hand into the same places.
 ```
 
 This copies only `specify/`, `write-spec/`, `write-tickets/` and
-`LICENSE`, and no agents. The planning skills need nothing else. With
-`build` and `judge` absent, `write-tickets` writes tickets that end at
-the end-to-end test and name no implementing method. With
-`implement-ticket` absent, it names the first ticket and stops instead
-of offering to start it. Work the tickets by any method: the exit
+`LICENSE`, and no agents. The planning skills need nothing else. Work
+the tickets by any method: the exit
 conditions under `## Exit conditions` decide done, and the ready gate
 described in `write-tickets` decides when a ticket may start.
 
@@ -135,7 +133,9 @@ described in `write-tickets` decides when a ticket may start.
 project's own `CLAUDE.md` for the facts specific to that project — its
 base branch, its checks, how it runs end to end, how it takes
 screenshots, and whether a GitHub project mirrors its tickets. Add it
-once, or let `write-tickets` propose it the first time it runs:
+once, or let `write-tickets` propose it the first time it runs. The
+`screenshots` key is the build method's own; `write-tickets` defines
+the other four:
 
 ```
 ## Conventions
