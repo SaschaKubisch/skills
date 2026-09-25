@@ -93,8 +93,10 @@ line; a list is written `[]` or `[a, b]`; `models` is the one inline map.
 A key the file leaves out, or a missing file, takes the default below.
 
 - `evidence_check` — `script` (default) or `judge`. `script`: this
-  method runs `build/scripts/check-evidence.mjs <ticket-folder>` before
-  hand-back and fixes everything it reports; `judge` also runs it first.
+  method runs `.claude/skills/build/scripts/check-evidence.mjs
+  <ticket-folder>` before hand-back and fixes everything it reports —
+  the path a project installs it at; in the skills repo itself, the
+  scripts below sit at `build/scripts/` — `judge` also runs it first.
   `judge`: the script does not run; only the judge's own reading of the
   screenshots and report catches evidence problems.
 - `judge_findings` — `split` (default) or `all-blocking`. `judge`'s own
@@ -104,9 +106,9 @@ A key the file leaves out, or a missing file, takes the default below.
 - `report` — `from-data` (default) or `handwritten`. `from-data`: this
   method writes `validation/report.json` (schema below), then renders
   `validation/agent-report.html` from it with
-  `build/scripts/render-report.mjs <ticket-folder>`. `handwritten`: the
-  report is written by hand, as the template further below lays it out,
-  with no `report.json`.
+  `.claude/skills/build/scripts/render-report.mjs <ticket-folder>`.
+  `handwritten`: the report is written by hand, as the template further
+  below lays it out, with no `report.json`.
 - `screenshots_capture` — `once` (default) or `every-round`. `once`:
   every screenshot is captured in a single pass, right after the last
   code change of a round — not once per step. `every-round`: capture
@@ -213,12 +215,13 @@ rounds — the judge's, and the person's requested changes — appended as
 they happen.
 
 With `report: from-data` (default): write `validation/report.json` first
-(schema below), then run `node build/scripts/render-report.mjs
-<ticket-folder>` to produce the HTML from it. Regenerate `report.json`
-whole after every round, then re-render; the one edit anyone else makes
-is the judge's line appended to `report.json`'s `rounds`, which the next
-regeneration carries over. With `report: handwritten`: write the HTML
-directly, from the template further below, the same way each round.
+(schema below), then run `node
+.claude/skills/build/scripts/render-report.mjs <ticket-folder>` to
+produce the HTML from it. Regenerate `report.json` whole after every
+round, then re-render; the one edit anyone else makes is the judge's
+line appended to `report.json`'s `rounds`, which the next regeneration
+carries over. With `report: handwritten`: write the HTML directly, from
+the template further below, the same way each round.
 
 Commit the report (and `report.json`, with `from-data`) and
 `validation/screenshots/` every time they are written —
@@ -226,10 +229,10 @@ Commit the report (and `report.json`, with `from-data`) and
 the merge `implement-ticket` makes on accept.
 
 **6. Hand back.** With `evidence_check: script` (default), run `node
-build/scripts/check-evidence.mjs <ticket-folder>` and fix everything it
-reports before anything else here — each line it prints names one
-problem with the screenshots or the report against the ticket and the
-Conventions. Push nothing. How the branch lands is not this
+.claude/skills/build/scripts/check-evidence.mjs <ticket-folder>` and fix
+everything it reports before anything else here — each line it prints
+names one problem with the screenshots or the report against the ticket
+and the Conventions. Push nothing. How the branch lands is not this
 method's job. Run every line of the exit-conditions block yourself, in
 order; all exit 0, or stop. The ticket reaches its item's `tickets/done/`
 when the person accepts the report: the `implement-ticket` skill does the merge

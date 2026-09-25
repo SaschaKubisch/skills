@@ -41,19 +41,21 @@ holds `ticket.md` and `validation/`.
 
 ## Do
 
-**1. Run everything again.** With `evidence_check: script` (default),
-run `node build/scripts/check-evidence.mjs <ticket-folder>` first — every
-line it prints is a finding, labelled `evidence` (see step 6). Then every
-command in the ticket's exit-condition block, and the checks from
-Conventions, yourself, in the worktree, comparing each exit code with the
-report's table; a claimed pass that fails here is a finding, so is a
-command the report does not list. The end-to-end command, the same way,
-unless `share_suite_result: true` (default) and `validation/suite-runs.json`
-already records a whole-suite run — see the build skill — for the exact
-commit under test; then trust that recorded run instead of running it
-again. Every command runs in the foreground with a timeout long enough
-to finish, per `background_waits` (default `foreground`); never write a
-sleep loop to poll for one's result.
+**1. Run everything again.** With `evidence_check: script` (default), run
+`node .claude/skills/build/scripts/check-evidence.mjs <ticket-folder>`
+first (the build skill's own script, at its installed path — see its
+workflow config section for where it sits in the skills repo itself) —
+every line it prints is a finding, labelled `evidence` (see step 6).
+Then every command in the ticket's exit-condition block, and the checks
+from Conventions, yourself, in the worktree, comparing each exit code
+with the report's table; a claimed pass that fails here is a finding, so
+is a command the report does not list. The end-to-end command, the same
+way, unless `share_suite_result: true` (default) and
+`validation/suite-runs.json` already records a whole-suite run — see the
+build skill — for the exact commit under test; then trust that recorded
+run instead of running it again. Every command runs in the foreground
+with a timeout long enough to finish, per `background_waits` (default
+`foreground`); never write a sleep loop to poll for one's result.
 
 **2. Read the diff for softening.** A test deleted, skipped, marked
 `.only`, weakened, or with its assertion commented; a spec, a ticket's
