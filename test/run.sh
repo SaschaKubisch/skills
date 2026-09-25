@@ -39,6 +39,17 @@ done
 check "$here/LICENSE" "$project/.claude/skills/LICENSE"
 check "$here/agents/builder.md" "$project/.claude/agents/builder.md"
 check "$here/agents/judge.md" "$project/.claude/agents/judge.md"
+check "$here/workflow.yml" "$project/.claude/workflow.yml"
+
+# a second install never overwrites the project's own workflow.yml
+echo "# a project's own edit" >> "$project/.claude/workflow.yml"
+before="$(cat "$project/.claude/workflow.yml")"
+"$here/install.sh" "$project" >/dev/null 2>&1
+after="$(cat "$project/.claude/workflow.yml")"
+if [[ "$before" != "$after" ]]; then
+  echo "FAIL: a second install.sh overwrote the project's own .claude/workflow.yml" >&2
+  fail=1
+fi
 
 # a missing target directory is refused
 if "$here/install.sh" "$tmp/does-not-exist" >/dev/null 2>&1; then
@@ -102,6 +113,11 @@ if [[ -e "$planning_project/.claude/agents" ]]; then
   fail=1
 fi
 
+if [[ -e "$planning_project/.claude/workflow.yml" ]]; then
+  echo "FAIL: install.sh --planning copied workflow.yml, which it should not" >&2
+  fail=1
+fi
+
 # an unknown flag is refused
 if "$here/install.sh" --bogus "$tmp/does-not-matter" >/dev/null 2>&1; then
   echo "FAIL: install.sh should refuse an unknown flag" >&2
@@ -159,7 +175,10 @@ if [[ -n "$build_conventions" && -n "$write_tickets_conventions" ]]; then
 fi
 
 if [[ "$fail" -eq 0 ]]; then
-  echo "PASS: install.sh copies every file byte-identical, refuses a bad target, --planning copies only the planning skills and refuses unknown flags, build/SKILL.md and README.md's Conventions blocks match, and write-tickets/SKILL.md's Conventions block is a subset of build's"
+  echo "PASS: install.sh copies every file byte-identical, refuses a bad target, --planning copies only the planning skills and refuses unknown flags, workflow.yml lands and is never overwritten, build/SKILL.md and README.md's Conventions blocks match, and write-tickets/SKILL.md's Conventions block is a subset of build's"
 fi
+
+# the evidence and report scripts, against their fixtures
+node "$here/test/scripts.test.mjs" || fail=1
 
 exit "$fail"
