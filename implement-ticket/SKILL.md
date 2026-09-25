@@ -142,21 +142,26 @@ number), question "Accept NNNN: merge it and mark it done?", options:
 
 **7. Accept, in order.** Any failure stops here and says so:
 
-1. `git switch <base>`.
+1. `git switch <base>`; note its commit as `<base-before>`.
 2. `git merge --no-ff -m "Merge <kind>/<slug>" <kind>/<slug>`. A
    conflict: `git merge --abort`, stop, the ticket stays in
    `in-progress/`.
 3. `git mv items/<item>/tickets/in-progress/<slug>
    items/<item>/tickets/done/<slug>`, commit `Done: <slug>`.
 4. `rm -f PROGRESS.md` — a leftover would mislead the next builder.
-5. With `--judge` and the last judge round a pass: write
-   `.claude/last-judged.json` at the repository root with the base
-   branch's current commit — `{"commit": "<git rev-parse HEAD>"}` — a
-   working file like `PROGRESS.md`, never committed; add it to
-   `.git/info/exclude` if nothing ignores it yet. The next ticket's
-   build reads it to decide whether `skip_baseline_when_judged` applies
-   (see the build skill). Without `--judge`, or a last round with
-   findings: leave any existing file as it is.
+5. With `--judge` and the last judge round a pass: the baseline is only
+   safe to record when this merge brought nothing onto `<base>` besides
+   this ticket's branch — `git merge-base --is-ancestor <base-before>
+   <kind>/<slug>`. True: write `.claude/last-judged.json` at the
+   repository root with the base branch's current commit —
+   `{"commit": "<git rev-parse HEAD>"}` — a working file like
+   `PROGRESS.md`, never committed; add it to `.git/info/exclude` if
+   nothing ignores it yet. The next ticket's build reads it to decide
+   whether `skip_baseline_when_judged` applies (see the build skill).
+   False: something else landed on `<base>` since the judge checked, so
+   `<base>` no longer holds exactly what was judged — remove any
+   existing `.claude/last-judged.json` instead. Without `--judge`, or a
+   last round with findings: leave any existing file as it is.
 
 Keep the branch; deleting it is the person's call, not this skill's.
 
