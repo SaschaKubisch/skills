@@ -68,18 +68,66 @@ Codex mirror), a fixed set of bullet keys:
 - checks (cheapest first): npm run lint; npx tsc --noEmit; npm test; npm run build
 - end to end: npx playwright test
 - screenshots: Playwright, 1280x800 and 390x844, saved per test
+- workflow config: .claude/workflow.yml
 - github project: <name, or none>
 ```
 
 `write-tickets` and `judge` read it the same way this method does.
-`write-tickets` defines every key here except `screenshots`, which is
-this method's own. When
+`write-tickets` defines every key here except `screenshots` and
+`workflow config`, which are this method's own. When
 it is missing: detect what it would say — `package.json`, a `Makefile`,
 CI config for the checks; a UI or not, and which kind, for the
 screenshot method — then write it in, so the next ticket does not
 detect it again. Defaults when nothing declares it: a web UI gets
 Playwright at 1280x800 and 390x844; a terminal UI gets text captures; no
-UI gets command output saved as text; the base branch is `main`.
+UI gets command output saved as text; the base branch is `main`; the
+workflow config is `.claude/workflow.yml` if that file exists, else
+every default in the next section.
+
+## The workflow config
+
+A file of flat, commented keys, `.claude/workflow.yml`, tunes how this
+method, `judge` and `implement-ticket` work in this project — `install.sh`
+copies a starting one, never over a project's own. One `key: value` per
+line; a list is written `[]` or `[a, b]`; `models` is the one inline map.
+A key the file leaves out, or a missing file, takes the default below.
+
+- `evidence_check` — `script` (default) or `judge`. `script`: this
+  method runs `build/scripts/check-evidence.mjs <ticket-folder>` before
+  hand-back and fixes everything it reports; `judge` also runs it first.
+  `judge`: the script does not run; only the judge's own reading of the
+  screenshots and report catches evidence problems.
+- `judge_findings` — `split` (default) or `all-blocking`. `judge`'s own
+  key; see that method.
+- `evidence_recheck` — `short-pass` (default) or `full-round`. `judge`'s
+  and `implement-ticket`'s own key; see those methods.
+- `report` — `from-data` (default) or `handwritten`. `from-data`: this
+  method writes `validation/report.json` (schema below), then renders
+  `validation/agent-report.html` from it with
+  `build/scripts/render-report.mjs <ticket-folder>`. `handwritten`: the
+  report is written by hand, as the template further below lays it out,
+  with no `report.json`.
+- `screenshots_capture` — `once` (default) or `every-round`. `once`:
+  every screenshot is captured in a single pass, right after the last
+  code change of a round — not once per step. `every-round`: capture
+  happens per step, as an earlier round of this project might.
+- `screenshot_sizes_phone_only_for` — a list of screen name globs, `[]`
+  by default. A screen matching one only needs the phone size — the last
+  size the Conventions `screenshots` line lists — captured and checked;
+  every other screen still needs every declared size.
+- `e2e_server` — `dev` (default) or `production`; `e2e_workers` — `1`
+  (default). See "Production and parallel end to end" below.
+- `share_suite_result`, `skip_baseline_when_judged` — both `true` by
+  default. See "The whole-suite record" below.
+- `background_waits` — `foreground` (default) or `poll`. `foreground`:
+  every long command runs in the foreground with a timeout long enough
+  to finish; a sleep loop that polls for a result is never written,
+  here or in `judge`. `poll` allows one, when the harness gives no other
+  way to wait.
+- `parallel_tickets` — `1` (default). `implement-ticket`'s own key; see
+  that method.
+- `models` — `{ builder: sonnet, judge: opus, evidence: sonnet }` by
+  default. `implement-ticket`'s own key; see that method.
 
 ## Do
 
@@ -92,7 +140,9 @@ person already prepared it.
 
 **2. The checks pass first.** Step 1 of every ticket: the walking
 skeleton on an empty repository, or the baseline confirmed on a green one,
-or the checks repaired on a red one. Nothing else in that step.
+or the checks repaired on a red one. Nothing else in that step. Skipped
+when `skip_baseline_when_judged` applies — see "The whole-suite record"
+below.
 
 **3. Every step, test first.** For each unticked step, in order:
 
@@ -111,11 +161,14 @@ skip it silently.
 **4. Validate, cheapest first.** The checks from Conventions, cheapest
 first, then the end-to-end command from Conventions, then the ticket's
 exit-conditions block as it stands. All green, or stop at the first red
-and go back to step 3.
+and go back to step 3. Record every whole-suite run in
+`validation/suite-runs.json` — see "The whole-suite record" below.
 
 With a UI, end to end is mandatory, and three sets of shots exist before
 validation counts, each captured by Conventions' screenshot method, at
-every size Conventions declares:
+every size Conventions declares (or only the phone size, the last size
+Conventions lists, for a screen `screenshot_sizes_phone_only_for`
+names):
 
 - **One full walkthrough** of the flow the ticket delivers, as a user
   would do it, with a shot at every screen it passes, at every declared
@@ -126,26 +179,53 @@ every size Conventions declares:
 - **One test per exit condition a screen can observe**, named
   `exit-<NN>-<slug>`, with its shot.
 
-Save each shot straight into the ticket's `validation/screenshots/`
-folder as it is captured.
+With `screenshots_capture: once` (default), capture every one of these in
+a single pass, right after the last code change of the round — not once
+per step; `every-round` captures as each step lands instead. Save each
+shot straight into the ticket's `validation/screenshots/` folder as it is
+captured.
+
+**Production and parallel end to end.** `e2e_server: production` runs
+the end-to-end command from Conventions against a production build
+instead of the dev server named there — only when the project documents
+how (its own script or Conventions line); confirm that documentation
+exists before relying on it, and stop and say the project has no
+production end-to-end support if it does not. This method never adds
+that support itself — it is a project change, done as its own ticket.
+`e2e_workers` above `1` is passed to the end-to-end runner as its worker
+count; it needs the project to give each worker its own test resources
+(a database, a port), documented the same way — without that, run with
+one worker regardless of the key's value.
 
 **5. The report.** `validation/agent-report.html` in the ticket folder,
-from the template below, self-contained: screenshots by relative path in
-`screenshots/`, no external asset but the diagram renderer. Written for
-someone who has not seen the ticket: plain words, every project term
-explained once. Sections, in order: implemented, per step; tests by kind
-with each result; the commands with exit codes; not tested and why; the
+self-contained: screenshots by relative path in `screenshots/`, no
+external asset but the diagram renderer. Written for someone who has not
+seen the ticket: plain words, every project term explained once.
+Sections, in order: implemented, per step; tests by kind with each
+result; the commands with exit codes; not tested and why; the
 screenshots with one line each on what to look at; the diagrams of the
 code as built, whole, with this ticket's changes highlighted; the
 rounds — the judge's, and the person's requested changes — appended as
-they happen. Regenerated whole by the builder after every round; the
-one edit anyone else makes is the judge's line appended under Rounds,
-which the next regeneration carries over. Commit
-the report and `validation/screenshots/` every time they are written —
+they happen.
+
+With `report: from-data` (default): write `validation/report.json` first
+(schema below), then run `node build/scripts/render-report.mjs
+<ticket-folder>` to produce the HTML from it. Regenerate `report.json`
+whole after every round, then re-render; the one edit anyone else makes
+is the judge's line appended to `report.json`'s `rounds`, which the next
+regeneration carries over. With `report: handwritten`: write the HTML
+directly, from the template further below, the same way each round.
+
+Commit the report (and `report.json`, with `from-data`) and
+`validation/screenshots/` every time they are written —
 `<type>(<NNNN>): report` — so the tree is clean for the judge and for
 the merge `implement-ticket` makes on accept.
 
-**6. Hand back.** Push nothing. How the branch lands is not this
+**6. Hand back.** With `evidence_check: script` (default), run `node
+build/scripts/check-evidence.mjs <ticket-folder>` and fix everything it
+reports before anything else here — each line it prints names one
+problem with the screenshots or the report against the ticket and the
+Conventions. Push nothing. How the branch lands is not this
 method's job. Run every line of the exit-conditions block yourself, in
 order; all exit 0, or stop. The ticket reaches its item's `tickets/done/`
 when the person accepts the report: the `implement-ticket` skill does the merge
@@ -162,6 +242,101 @@ the report and commit it, as in step 5. A finding you believe is wrong: say why 
 under Not tested — leave the step unticked, and stop; a person decides.
 Never argue a finding away in silence.
 
+## Report schema
+
+`validation/report.json`, read by `render-report.mjs` and by
+`check-evidence.mjs`, one object:
+
+```json
+{
+  "ticket": "0007-prices",
+  "title": "Prices",
+  "spec": "specs/system.md",
+  "branch": "feat/0007-prices",
+  "started": "2026-01-01T10:00:00Z",
+  "ended": "2026-01-01T12:00:00Z",
+  "ended_by": "exit conditions passed",
+  "steps": [ { "n": 1, "summary": "<what exists now because of it>" } ],
+  "tests": [
+    { "kind": "unit", "name": "<test name>", "proves": "<step or invariant>", "result": "pass", "evidence": null },
+    { "kind": "end to end", "name": "<test name>", "proves": "invariant 4", "result": "pass", "evidence": "invariant-04-order-total-1280x800.png" }
+  ],
+  "not_tested": [ { "what": "<what>", "reason": "<why>" } ],
+  "commands": [
+    { "command": "npm run lint", "exit_code": 0, "commit": "<hash>", "whole_suite": false },
+    { "command": "npx playwright test", "exit_code": 0, "commit": "<hash>", "whole_suite": true }
+  ],
+  "screenshots": [
+    { "file": "walkthrough-01-menu", "claim": "<what to look at>", "sizes": ["1280x800", "390x844"] }
+  ],
+  "rounds": [ { "round": "judge round 1", "findings": ["<one line per finding>"] } ],
+  "diagrams": [ { "title": "Modules and dependencies", "text": "flowchart LR\n..." } ]
+}
+```
+
+`commands` carries every command run this round, not only the
+exit-conditions block; the one whole-suite run of the round (see step 4)
+has `whole_suite: true`, on the commit it ran on — `check-evidence.mjs`'s
+whole-suite rule reads exactly this. `screenshots[].sizes` names every
+size actually captured for that shot — the sizes required (all of
+Conventions', or the phone one alone for a
+`screenshot_sizes_phone_only_for` screen) must be among them, and each
+must exist as `<file>-<size>.png` under `validation/screenshots/`.
+`screenshots[].file` matches its filenames without the size suffix, and
+carries the `walkthrough-`, `invariant-` or `exit-` prefix the naming
+rules above give it. `diagrams[].text` is the fenced block's contents
+without the fence, one entry per diagram kind (module graph, schema,
+sequence, lifecycle) the template below lists.
+
+## The whole-suite record
+
+A whole-suite run is every check from Conventions and every
+exit-conditions command run together, back to back, nothing failing in
+between. Append each one to `validation/suite-runs.json` — one line per
+run: the commit, the commands, the exit codes, how long it took.
+
+- `share_suite_result: true` (default): a whole-suite run already
+  recorded there for the commit step 4 would otherwise re-run stands in
+  for it; nothing runs twice for the same commit. `false`: always run it
+  again.
+- `skip_baseline_when_judged: true` (default): step 2 is skipped entirely
+  when `.claude/last-judged.json` at the repository root names a commit
+  matching the base branch's current head — that commit already passed a
+  judge round, so the baseline is known green. `implement-ticket`'s
+  accept step writes that file. No such file, or its commit does not
+  match the base's head: run step 2 as above. `false`: always run it.
+
+## Checklist
+
+What round after round of judging keeps finding, written down so it
+stops recurring. `judge` reads this section too, as part of what it
+checks.
+
+- Every screenshot shows what its file name claims, readable at every
+  declared size; scroll or capture full page when needed; wait for a
+  live view to be connected before capturing it. Look at each image.
+- Name `exit-NN-*` only for this ticket's exit condition NN,
+  `invariant-NN-*` only for invariant NN. Screenshots a shared spec file
+  produces for other tickets' screens are not kept.
+- A refusal's screenshot shows the refusal as a person sees it.
+- Browser tests check the visible layout at each size.
+- Tests clean up what they create.
+- A state change that must respect a rule reads its row under a lock; a
+  test races two changes and fails without the lock. Write that test
+  first.
+- Every new route gets tests over HTTP for each refusal it has.
+- Every change another screen shows is published to every screen that
+  shows it; a test with a second screen already open proves it.
+- A screen takes its state from the server, so a second and a reloaded
+  screen show the same.
+- Live-publish tests listen only after their setup.
+- Anything that must not reach a client is checked in the raw response.
+- Each test claim is proved by mutation: remove the code it protects, see
+  it fail, restore. Say so in the report.
+- Bad input gets a 4xx, never a 500; bound anything a client can make
+  large or repeat. Browser code imports no server-only module.
+- Never run two test suites that share state at the same time.
+
 ## Stop when
 
 - A test cannot be written for a step: say why in the report, under Not
@@ -176,6 +351,9 @@ Never argue a finding away in silence.
   How it lands is not this method's job; the report is the hand-back.
 
 ## The report template
+
+The layout `render-report.mjs` renders from `report.json`, and the one to
+follow by hand with `report: handwritten`:
 
 ```html
 <!doctype html>
