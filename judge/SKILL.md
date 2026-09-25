@@ -99,10 +99,9 @@ that is wrong and one thing that would make it right.
 
 ## Attribution
 
-"Checking the checks" and the judge as a second reader are this
-project's own, from [agentic-engineering: anthrazit.md](https://github.com/SaschaKubisch/agentic-engineering/blob/main/masters/anthrazit.md):
-a check softened to make something pass hides inside a green result. The rest is ours: run again
-rather than trust, the screenshot read as an image against its claim,
+"Checking the checks" and the judge as a second reader are ours: a
+check softened to make something pass hides inside a green result. So
+are run again rather than trust, the screenshot read as an image against its claim,
 the finding as one wrong thing and one right thing, and the findings as
 appended steps so the loop needs no other channel.
 

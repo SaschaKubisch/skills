@@ -247,14 +247,12 @@ fact is a landmine>
 ## Attribution
 
 The verbatim-not-paraphrased rule, the "stop rather than invent" rule, and
-the one-spec-then-siblings shape are this project's own, arrived at
-because an agentic loop treats `specs/*` as locked ground truth — see
-[agentic-engineering: ralph-loop-setup.md](https://github.com/SaschaKubisch/agentic-engineering/blob/main/masters/ralph-loop-setup.md)
-§3.4 and §3.7: "the loop can rewrite the
-requirements to match what it built... the same failure as an agent
-editing a test to make it pass." The file layout is Geoffrey Huntley's
+the one-spec-then-siblings shape are ours, arrived at because an agentic
+loop treats `specs/*` as locked ground truth: a loop that can rewrite
+the requirements to match what it built fails the same way as an agent
+that edits a test to make it pass. The file layout is Geoffrey Huntley's
 (`specs/*`, [ghuntley.com/ralph](https://ghuntley.com/ralph/)); the name
-`system.md` for the first spec is the reference setup's own. The finish
+`system.md` for the first spec is ours. The finish
 line as commands rather than prose is this project's own rule. Exploring the
 codebase first, using its vocabulary and respecting its ADRs, the spec as
 what survives the end of a context window, and the seam discipline

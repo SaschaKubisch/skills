@@ -71,7 +71,9 @@ Codex mirror), a fixed set of bullet keys:
 - github project: <name, or none>
 ```
 
-`write-tickets` and `judge` read it the same way this method does. When
+`write-tickets` and `judge` read it the same way this method does;
+`write-tickets` carries the same block, byte for byte, so it needs no
+build skill to propose one. When
 it is missing: detect what it would say — `package.json`, a `Makefile`,
 CI config for the checks; a UI or not, and which kind, for the
 screenshot method — then write it in, so the next ticket does not
@@ -251,7 +253,7 @@ separate test database, the two-browser-context step and the audit are
 this project's own, from `write-tickets`. The rest is ours: the test named
 after the step's proves clause, the three screenshot sets as evidence,
 the self-contained report in the ticket's folder, the branch convention,
-and the never-soften rule, which is the project's oldest: a check that
-skips itself when inconvenient is how a test suite becomes decoration.
+and the never-soften rule: a check that skips itself when inconvenient
+is how a test suite becomes decoration.
 
 Licence: MIT, see `LICENSE` beside this folder.

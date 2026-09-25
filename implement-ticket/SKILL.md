@@ -1,6 +1,6 @@
 ---
 name: implement-ticket
-description: The loop for one ticket — `<slug> [--judge]`, typed by a person. Claims it, applying the ready gate as it moves the ticket from backlog to ready to in-progress; creates or switches to its branch; starts the builder agent (Sonnet, the build method) and, only with --judge, the judge agent (Opus, the judge method) afterward — while the judge requests changes the builder works a review round on the findings, then the judge again, no round cap but a question after each judge round from the third on that still has findings. Opens the validation report, then asks the person to accept it (merge --no-ff, move the ticket to done, offer the next frontier ticket), request changes (another builder round), or stop without accepting.
+description: The loop for one ticket — `<slug> [--judge]`, typed by a person. Claims it, applying the ready gate as it moves the ticket from backlog to in-progress; creates or switches to its branch; starts the builder agent (Sonnet, the build method) and, only with --judge, the judge agent (Opus, the judge method) afterward — while the judge requests changes the builder works a review round on the findings, then the judge again, no round cap but a question after each judge round from the third on that still has findings. Opens the validation report, then asks the person to accept it (merge --no-ff, move the ticket to done, offer the next frontier ticket), request changes (another builder round), or stop without accepting.
 disable-model-invocation: true
 ---
 
@@ -57,11 +57,9 @@ Apply the ready gate, reading the ticket as text: a `Kind:` line; a
 slug under `## Blocked by` has a folder in `items/*/tickets/done/`. Any
 of these missing: stop and say which.
 
-Already in `backlog/`: `git mv` its folder to `ready/`, commit `Ready:
-<slug>`, then `git mv` it to `in-progress/`, commit `Pick up <slug>` —
-two commits, the gate and the pickup. Already in `ready/`: only the
-pickup commit. Already in `in-progress/`: neither commit — this is a
-resume.
+In `backlog/`: `git mv` its folder to `in-progress/`, commit `Pick up
+<slug>` — one commit, the claim. Already in `in-progress/`: no commit —
+this is a resume.
 
 **2. Branch.** `<kind>/<slug>` (the `Kind:` line, the ticket's slug):
 `git switch <kind>/<slug>` if an earlier round or session already made
@@ -140,15 +138,15 @@ number), question "Accept NNNN: merge it and mark it done?", options:
 
 Keep the branch; deleting it is the person's call, not this skill's.
 
-**The GitHub mirror.** Every move this skill makes — to `ready/`,
-`in-progress/`, `done/` — is followed, for a ticket with a `Mirror:`
-line, by setting the issue's project Status to the option of the same
-name as the column (`Ready`, `In progress`, `Done`). The project has no
+**The GitHub mirror.** Every move this skill makes — to `in-progress/`,
+`done/` — is followed, for a ticket with a `Mirror:` line, by setting
+the issue's project Status to the option of the same name as the column
+(`In progress`, `Done`). The project has no
 option of that name: say so and leave the Status as it is. The folder
 is the ticket's state; the Status only follows it.
 
 **8. Next ticket.** The lowest-numbered ticket across every
-`items/*/tickets/{ready,backlog}/` whose every `Blocked by` slug has a
+`items/*/tickets/backlog/` whose every `Blocked by` slug has a
 folder in `done/`. HITL tickets are included — a person is right
 here. For a HITL ticket, say which step
 needs the person before starting it.
@@ -168,8 +166,7 @@ needs the person before starting it.
 
 ## Attribution
 
-Ours. The loop is the improvement loop of
-[agentic-engineering: anthrazit.md](https://github.com/SaschaKubisch/agentic-engineering/blob/main/masters/anthrazit.md),
+Ours. The loop is an improvement loop — build, review, build again —
 optionally checked by a second agent instead of the person alone, with
 the verdict as its visible form when `--judge` runs it.
 

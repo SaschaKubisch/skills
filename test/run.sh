@@ -73,8 +73,74 @@ for s in "${asking_skills[@]}"; do
   fi
 done
 
+# --planning into a fresh project copies only the three planning skills
+# and LICENSE, byte-identical, and no agents
+planning_project="$tmp/planning-project"
+mkdir -p "$planning_project"
+
+"$here/install.sh" --planning "$planning_project" >/tmp/install-planning-output.$$ 2>&1 || {
+  echo "FAIL: install.sh --planning exited nonzero on a valid target" >&2
+  cat /tmp/install-planning-output.$$ >&2
+  fail=1
+}
+rm -f /tmp/install-planning-output.$$
+
+for s in specify write-spec write-tickets; do
+  check "$here/$s/SKILL.md" "$planning_project/.claude/skills/$s/SKILL.md"
+done
+check "$here/LICENSE" "$planning_project/.claude/skills/LICENSE"
+
+for s in build judge implement-ticket; do
+  if [[ -e "$planning_project/.claude/skills/$s" ]]; then
+    echo "FAIL: install.sh --planning copied $s, which it should not" >&2
+    fail=1
+  fi
+done
+
+if [[ -e "$planning_project/.claude/agents" ]]; then
+  echo "FAIL: install.sh --planning created .claude/agents, which it should not" >&2
+  fail=1
+fi
+
+# an unknown flag is refused
+if "$here/install.sh" --bogus "$tmp/does-not-matter" >/dev/null 2>&1; then
+  echo "FAIL: install.sh should refuse an unknown flag" >&2
+  fail=1
+fi
+
+# the fenced Conventions block is byte-identical in build/SKILL.md,
+# write-tickets/SKILL.md and README.md
+extract_conventions() {
+  awk '
+    capture {
+      if ($0 == "```") { exit }
+      print
+      next
+    }
+    prevfence && $0 == "## Conventions" { capture = 1; print; next }
+    { prevfence = ($0 == "```") }
+  ' "$1"
+}
+
+conventions_files=(build/SKILL.md write-tickets/SKILL.md README.md)
+conventions_first=""
+for f in "${conventions_files[@]}"; do
+  block="$(extract_conventions "$here/$f")"
+  if [[ -z "$block" ]]; then
+    echo "FAIL: $f has no fenced Conventions block" >&2
+    fail=1
+    continue
+  fi
+  if [[ -z "$conventions_first" ]]; then
+    conventions_first="$block"
+  elif [[ "$block" != "$conventions_first" ]]; then
+    echo "FAIL: $f's Conventions block differs from build/SKILL.md's" >&2
+    fail=1
+  fi
+done
+
 if [[ "$fail" -eq 0 ]]; then
-  echo "PASS: install.sh copies every file byte-identical, refuses a bad target"
+  echo "PASS: install.sh copies every file byte-identical, refuses a bad target, --planning copies only the planning skills and refuses unknown flags, and the Conventions block matches across build, write-tickets and README"
 fi
 
 exit "$fail"

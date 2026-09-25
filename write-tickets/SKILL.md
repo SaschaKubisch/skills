@@ -1,6 +1,6 @@
 ---
 name: write-tickets
-description: Cut a spec into tickets — vertical slices sized to one run, each with a Summary line of at most two sentences under its title, a Parent line, its blocking edges, AFK or HITL, its ordered Steps, exit conditions that are runnable commands, and a validation report with screenshots and diagrams as its last review. Writes them as files under items/<item>/tickets/backlog/, never ready/, and mirrors them to GitHub issues when a project is configured. Use after write-spec.
+description: Cut a spec into tickets — vertical slices sized to one run, each with a Summary line of at most two sentences under its title, a Parent line, its blocking edges, AFK or HITL, its ordered Steps, exit conditions that are runnable commands, and — only when the build and judge skills are installed beside it — three review steps that end in a validation report and a judge's verdict. Names no implementing method otherwise; the tickets can be worked by any. Writes them as files under items/<item>/tickets/backlog/, never in-progress/, and mirrors them to GitHub issues when a project is configured. Use after write-spec.
 disable-model-invocation: true
 ---
 
@@ -16,9 +16,10 @@ checklist; its exit conditions decide done. A ticket a loop cannot grade
 is not finished; a ticket without steps cannot be run.
 
 Tickets are folders: `items/<item>/tickets/<status>/NNNN-<slug>/`, holding
-`ticket.md` and, once worked, `validation/` with the report and its
-screenshots. The status folder is the column — `backlog`, `ready`,
-`in-progress`, `halted`, `done`; `<item>` is the item's slug, or
+`ticket.md` and, once worked, whatever the method that worked it left
+beside it — the build method leaves `validation/` with the report and its
+screenshots. The status folder is the column — `backlog`,
+`in-progress`, `done`; `<item>` is the item's slug, or
 `system` for tickets cut from `specs/system.md`. A ticket moves by moving
 its folder (`git mv`), by a tool or by a person, and
 everything in it moves with it. This skill writes into `backlog/` only.
@@ -55,15 +56,22 @@ Detect, do not assume:
 - Existing tickets: every `items/*/tickets/*/` folder and the highest
   number across all of them.
 - The branch checked out, and the base branch from the project's
-  CLAUDE.md `## Conventions` section (see the build skill). Not on the
+  CLAUDE.md `## Conventions` section (see Conventions below). Not on the
   base branch: say so, and ask (see Asking) whether to switch to it
-  before writing — `implement-ticket` claims tickets from the base branch, and
-  a ticket committed elsewhere is not there to claim. Not a git
-  repository: say so; the ticket files are written but nothing is
-  committed, and `implement-ticket` cannot run until they are.
+  before writing — tickets are claimed from the base branch, and a ticket
+  committed elsewhere is not there to claim. Not a git repository: say
+  so; the ticket files are written but nothing is committed, and no gate
+  that checks version control can move them until they are.
 - The mirror: `gh auth status`, and a `github project` line under the
-  project's CLAUDE.md `## Conventions` section (see the build skill).
+  project's CLAUDE.md `## Conventions` section (see Conventions below).
   Configured, or not — absent means the mirror is off.
+- The implementing skills: is `build` installed beside this one, and
+  `judge`, and `implement-ticket` — `.claude/skills/<name>/SKILL.md` at
+  the installed path this skill was read from? `build` and `judge` both
+  present is the **review method**: every ticket closes with the three
+  `[REVIEW]` steps in step 4. Either absent: no ticket names them, and
+  whatever works the tickets decides how they are reviewed.
+  `implement-ticket` present or absent decides step 9.
 
 Say what you found before cutting a slice. Every step and every exit
 condition below depends on it.
@@ -92,8 +100,8 @@ ticket, and it blocks the rest. On an empty folder there is none.
   nothing built yet.
 - Later slices add breadth: edge cases, the remaining behaviour, polish.
 - The plan is the delta: a spec item the code already satisfies gets no
-  slice and no step. Say which items you skipped and why; the audit step
-  in every ticket still checks them.
+  slice and no step. Say which items you skipped and why; with the review
+  method installed, the judge still checks them in every ticket.
 
 Why vertical: a slice that ships one layer works only once every other
 layer has landed, so its exit conditions have to reach into work another
@@ -178,10 +186,12 @@ line, and ask about it in step 6.
 - **The end-to-end test is the last build step**: the full-visit browser
   test where there is a UI; the outermost seam — API, CLI — where there is
   none.
-- **Three `[REVIEW]` steps close every ticket**; `[REVIEW]` marks a step
-  for the stronger model. First the screenshots, by the build method (the
-  build skill): one full walkthrough of the flow the slice delivers at
-  every size the project's Conventions declare, by its screenshot method
+- **With the review method installed, three `[REVIEW]` steps close every
+  ticket**; `[REVIEW]` marks a step for the stronger model. Without it,
+  the end-to-end test is the last step and none of the three is written;
+  the exit conditions still decide done. First the screenshots, by the
+  build method (the build skill): one full walkthrough of the flow the
+  slice delivers at every size the project's Conventions declare, by its screenshot method
   (see the build skill), one per invariant the slice touches, one per exit
   condition the method can observe, saved under the ticket's
   `validation/screenshots/` (no UI: run every command or endpoint the
@@ -217,9 +227,9 @@ npx playwright test qr-flow
 
 Each line begins with the command that decides it. Cheapest first: they
 are a gate chain, and the expensive ones run only on work that cleared the
-cheap ones. The report is required by the build method; no line for it
-goes in the block. Every invariant this slice touches appears here, or
-under `NOT CHECKED` with the reason — an unchecked invariant is a
+cheap ones. No line for a validation report goes in the block: where
+there is one, the build method requires it. Every invariant this slice
+touches appears here, or under `NOT CHECKED` with the reason — an unchecked invariant is a
 decision, but only once it is written down. What only a person can judge
 becomes a `[REVIEW]` step, and is listed under `HUMAN CHECK` with what to
 look at; never dress a human check up as a command.
@@ -228,9 +238,9 @@ look at; never dress a human check up as a command.
 title; AFK or HITL; blocked by (or "nothing — can start now"); what it
 delivers, end to end; its steps; its exit conditions. If the project's
 CLAUDE.md has no `## Conventions` section, propose one in the same round
-— the format is defined in the build skill — from what "Look first"
+— in the format under Conventions below — from what "Look first"
 detected (checks, end-to-end command, screenshot sizes and method, base
-branch, github project), with the build skill's defaults for whatever
+branch, github project), with the defaults given there for whatever
 detection came up empty. Print this reading checklist beside the
 breakdown, for the user to check the plan against before answering:
 
@@ -278,8 +288,7 @@ nothing already staged rides along), before saying anything else. Every move a
 ticket makes is a `git mv` and a commit, so an uncommitted ticket cannot
 pass any gate that checks version control. Close by naming the first
 ticket with nothing blocking it, by slug (`0001-walking-skeleton`).
-Moving it to `ready/` is not this skill's job: a person or a tool does
-it.
+Claiming it is not this skill's job: a person or a tool does it.
 
 **8. Mirror to GitHub, if configured.** Blockers first: one issue per
 ticket with the file's body, `Mirror: <issue url>` written back into the
@@ -299,14 +308,16 @@ gh api --method POST \
 If the mirror is not configured, say so plainly and stop after the files.
 The files are the tickets; the issues are a view.
 
-**9. Close with the handoff.** Ask (see Asking): "Start implementing
+**9. Close with the handoff.** `implement-ticket` not installed beside
+this skill: stop after naming the first ticket; whatever works the
+tickets picks it up. Installed: ask (see Asking): "Start implementing
 <first-ticket>?", options "Yes, implement it now (Recommended)" / "Not
 now; I'll start it myself". Where a tool, rather than a person, is what
-moves tickets from `ready/` through `in-progress/`, answer "Not now" and
+moves tickets from `backlog/` to `in-progress/`, answer "Not now" and
 let it pick the ticket up. On yes: read
-`.claude/skills/implement-ticket/SKILL.md` — the implement-ticket skill beside this
-one, at its installed path — in full, and follow it, with the first
-ticket's slug as its argument.
+`.claude/skills/implement-ticket/SKILL.md` — the implement-ticket skill
+beside this one, at its installed path — in full, and follow it, with
+the first ticket's slug as its argument.
 
 ## Stop when
 
@@ -315,15 +326,37 @@ ticket's slug as its argument.
   Delete it, or write the reason.
 - The ticket files are written but not committed: commit them. A ticket
   the gate cannot move is not delivered.
-- A ticket would land in `tickets/ready/`: it does not. This skill never
-  moves a ticket to `ready/` itself — `implement-ticket`'s claim does that, or
-  a tool does.
+- A ticket would land anywhere but `tickets/backlog/`: it does not. This
+  skill never claims a ticket — a person, `implement-ticket` or another
+  tool does that, through the ready gate.
 - An exit condition is prose: it is not an exit condition.
 - A ticket has no `Summary:` line, or one longer than two sentences: fix
   it before writing the file.
 - A slice needs two runs: split it. A step needs two iterations: split it.
 - Nothing can make the checks pass until a ticket's fourth step: reorder.
 - The parent spec would be edited or closed: it is not.
+
+## Conventions
+
+A project's own facts — base branch, checks, end-to-end command,
+screenshot sizes and method, GitHub project — live in one place: a
+`## Conventions` section in the project's CLAUDE.md (or AGENTS.md for a
+Codex mirror), a fixed set of bullet keys:
+
+```
+## Conventions
+- base branch: main
+- checks (cheapest first): npm run lint; npx tsc --noEmit; npm test; npm run build
+- end to end: npx playwright test
+- screenshots: Playwright, 1280x800 and 390x844, saved per test
+- github project: <name, or none>
+```
+
+The build skill defines the same block, byte for byte; any implementing
+method can read it. Defaults when nothing declares a key: a web UI gets
+Playwright at 1280x800 and 390x844; a terminal UI gets text captures; no
+UI gets command output saved as text; the base branch is `main`; the
+GitHub project is none.
 
 ## The ticket template
 
@@ -367,6 +400,10 @@ MAY NOT     <the negative constraint — often an invariant in one line>
    repaired> — proves: <the commands run green>
 2. <one iteration's slice> — proves: <criterion or invariant>
 3. ...
+N-3. <the end-to-end test> — proves: <the flow the slice delivers, end
+   to end>
+<N-2 to N only with the review method installed; without it the
+end-to-end test is the last step, numbered N>
 N-2. [REVIEW] screenshots, by the build method — the walkthrough at every
    size the project's Conventions declare, one per invariant this slice
    touches, one per exit condition the method can observe, under
@@ -413,7 +450,7 @@ locked for the run.
 
 ## The validation report
 
-One file per ticket, `validation/agent-report.html` inside the ticket's
+Only with the review method installed. One file per ticket, `validation/agent-report.html` inside the ticket's
 folder, with its screenshots in `validation/screenshots/`, written by the
 ticket's second-to-last `[REVIEW]` step and regenerated whole after every
 judge round. Its template and its rules are in the build skill; the
@@ -422,14 +459,21 @@ person reads at the run review.
 
 ## Working the frontier
 
-The **frontier** is every ticket in a `tickets/ready/` or
-`tickets/backlog/` folder, in any item, whose `Blocked by` folders are
-all in a `tickets/done/` folder. That is what can run right now; a
-ticket in `backlog/` passes the ready gate on its way (see `implement-ticket`).
+The **frontier** is every ticket in a `tickets/backlog/` folder, in any
+item, whose `Blocked by` folders are
+all in a `tickets/done/` folder. That is what can run right now.
 
-- Claim before working: move the folder to `in-progress/`, first thing,
-  and commit the move — that is the claim. A mirrored ticket's project
-  Status follows each move (see `implement-ticket`).
+A ticket passes the **ready gate** before it is claimed:
+the ticket read as text has a `Kind:` line, a `Summary:` line of at most
+two sentences, at least one command under `## Exit conditions`, at least
+one numbered step under `## Steps`, and every slug under `## Blocked by`
+has a folder in `items/*/tickets/done/`. Any of these missing: it is
+not claimed and stays in `backlog/`. `implement-ticket` applies this gate; a person or another
+tool applies the same one.
+
+- Claim before working: move the folder from `backlog/` to
+  `in-progress/`, first thing, and commit the move — that is the claim. A mirrored ticket's project
+  Status follows each move.
 - AFK tickets on the frontier can run in parallel, one working copy each.
 - HITL tickets wait for a person, however unblocked they are.
 - A purely linear chain has a frontier of one; work top to bottom.
@@ -448,16 +492,14 @@ from that method in this project's words; none of his text is copied.
 Ours: exit conditions as runnable commands rather than prose, the
 cheapest-first gate chain, the required `NOT CHECKED` and `HUMAN CHECK`
 headings, the `Parent` line, tickets as files with the folder as the
-column and GitHub as a mirror, writing to backlog rather than ready so the
-gate does its job, one ticket as one run's unit of work, and the Steps
+column and GitHub as a mirror, writing to backlog so the gate checks
+every ticket before it is claimed, one ticket as one run's unit of work,
+and the Steps
 inside the ticket — the walking-skeleton-first rule, the separate test
 database, the two-browser-context step and the `[REVIEW]` audit step, each
-added after a real run went green while something was silently wrong (see
-[agentic-engineering: video-4-simple.md](https://github.com/SaschaKubisch/agentic-engineering/blob/main/youtube/episodes/video-4-simple.md)
-§4 and §5). The ordered steps as a
-read-only document the loop follows is the three-phase model in
-[agentic-engineering: ralph-loop-setup.md](https://github.com/SaschaKubisch/agentic-engineering/blob/main/masters/ralph-loop-setup.md)
-§3.7: requirements, then a plan, and only
-the third phase is a loop.
+added after a real run went green while something was silently wrong;
+and the ordered steps as a read-only document the loop follows, the
+second of three phases: requirements, then a plan, and only the third
+phase is a loop.
 
 Licence: MIT, see `LICENSE` beside this folder.
