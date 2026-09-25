@@ -1,0 +1,14 @@
+# .claude/workflow.yml — how the building skills work in this project.
+evidence_check: script          # script | judge   (build/scripts/check-evidence.mjs, or the judge alone)
+judge_findings: split           # split | all-blocking   (label each finding behaviour or evidence)
+evidence_recheck: short-pass    # short-pass | full-round   (an all-evidence round's recheck)
+report: from-data               # from-data | handwritten   (validation/report.json, rendered)
+screenshots_capture: once       # once | every-round   (one capture pass, or one per step)
+screenshot_sizes_phone_only_for: []   # screen globs; [] = every size for every screen
+e2e_server: dev                 # dev | production   (production needs project support)
+e2e_workers: 1                  # >1 needs per-worker databases and ports
+share_suite_result: true        # trust a recorded whole-suite result for the same commit
+skip_baseline_when_judged: true # skip step 1 when base = the commit the last judge passed
+background_waits: foreground    # foreground | poll   (foreground: never write a sleep loop)
+parallel_tickets: 1             # >1 needs isolated test resources per run
+models: { builder: sonnet, judge: opus, evidence: sonnet }
