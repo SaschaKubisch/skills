@@ -151,8 +151,9 @@ number), question "Accept NNNN: merge it and mark it done?", options:
 4. `rm -f PROGRESS.md` — a leftover would mislead the next builder.
 5. With `--judge` and the last judge round a pass: write
    `.claude/last-judged.json` at the repository root with the base
-   branch's current commit — `{"commit": "<git rev-parse HEAD>"}` —
-   untracked, like `PROGRESS.md`, never committed. The next ticket's
+   branch's current commit — `{"commit": "<git rev-parse HEAD>"}` — a
+   working file like `PROGRESS.md`, never committed; add it to
+   `.git/info/exclude` if nothing ignores it yet. The next ticket's
    build reads it to decide whether `skip_baseline_when_judged` applies
    (see the build skill). Without `--judge`, or a last round with
    findings: leave any existing file as it is.

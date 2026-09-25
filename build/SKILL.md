@@ -306,7 +306,9 @@ run: the commit, the commands, the exit codes, how long it took.
   when `.claude/last-judged.json` at the repository root names a commit
   matching the base branch's current head — that commit already passed a
   judge round, so the baseline is known green. `implement-ticket`'s
-  accept step writes that file. No such file, or its commit does not
+  accept step writes that file — a working file like `PROGRESS.md`,
+  never committed, added to `.git/info/exclude` if nothing ignores it
+  yet. No such file, or its commit does not
   match the base's head: run step 2 as above. `false`: always run it.
 
 ## Checklist
