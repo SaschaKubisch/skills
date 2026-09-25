@@ -12,7 +12,7 @@ export const defaultConfig = {
   evidence_recheck: "short-pass",
   report: "from-data",
   screenshots_capture: "once",
-  screenshot_sizes_phone_only_for: [],
+  screenshot_sizes_first_only_for: [],
   e2e_server: "dev",
   e2e_workers: 1,
   share_suite_result: true,
@@ -131,7 +131,7 @@ export function readConventions(projectRoot) {
 
 // The sizes a project's `screenshots` Conventions line declares, in the
 // order written, e.g. "Playwright, 1280x800 and 390x844, saved per test"
-// -> ["1280x800", "390x844"]. The last size listed is the phone size.
+// -> ["1280x800", "390x844"]. The first size listed is the desktop size.
 export function screenshotSizes(conventions) {
   const line = conventions["screenshots"] || "";
   return line.match(/\d+x\d+/g) || [];

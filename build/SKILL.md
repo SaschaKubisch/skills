@@ -111,10 +111,11 @@ A key the file leaves out, or a missing file, takes the default below.
   every screenshot is captured in a single pass, right after the last
   code change of a round — not once per step. `every-round`: capture
   happens per step, as an earlier round of this project might.
-- `screenshot_sizes_phone_only_for` — a list of screen name globs, `[]`
-  by default. A screen matching one only needs the phone size — the last
-  size the Conventions `screenshots` line lists — captured and checked;
-  every other screen still needs every declared size.
+- `screenshot_sizes_first_only_for` — a list of screenshot-name globs
+  (matched against `screenshots[].file`, e.g. `*kitchen*`), `[]` by
+  default. A screenshot matching one only needs the first size the
+  Conventions `screenshots` line lists — the desktop size — captured and
+  checked; every other screen still needs every declared size.
 - `e2e_server` — `dev` (default) or `production`; `e2e_workers` — `1`
   (default). See "Production and parallel end to end" below.
 - `share_suite_result`, `skip_baseline_when_judged` — both `true` by
@@ -166,9 +167,9 @@ and go back to step 3. Record every whole-suite run in
 
 With a UI, end to end is mandatory, and three sets of shots exist before
 validation counts, each captured by Conventions' screenshot method, at
-every size Conventions declares (or only the phone size, the last size
-Conventions lists, for a screen `screenshot_sizes_phone_only_for`
-names):
+every size Conventions declares (or only the first size, the desktop
+size Conventions lists first, for a screenshot
+`screenshot_sizes_first_only_for` names):
 
 - **One full walkthrough** of the flow the ticket delivers, as a user
   would do it, with a shot at every screen it passes, at every declared
@@ -282,8 +283,8 @@ exit-conditions block; the one whole-suite run of the round (see step 4)
 has `whole_suite: true`, on the commit it ran on — `check-evidence.mjs`'s
 whole-suite rule reads exactly this. `screenshots[].sizes` names every
 size actually captured for that shot — the sizes required (all of
-Conventions', or the phone one alone for a
-`screenshot_sizes_phone_only_for` screen) must be among them, and each
+Conventions', or the first one alone when `.file` matches a
+`screenshot_sizes_first_only_for` glob) must be among them, and each
 must exist as `<file>-<size>.png` under `validation/screenshots/`.
 `screenshots[].file` matches its filenames without the size suffix, and
 carries the `walkthrough-`, `invariant-` or `exit-` prefix the naming

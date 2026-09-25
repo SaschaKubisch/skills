@@ -39,6 +39,9 @@ const passingFixtures = [
   // an invariant named only in a step's proves clause (not under
   // "## Invariants this touches") still counts as touched.
   "passing-invariant-via-proves",
+  // a screen matching screenshot_sizes_first_only_for needs only the
+  // first (desktop) size Conventions lists.
+  "passing-first-only-screen",
 ];
 
 for (const fixture of passingFixtures) {
@@ -70,6 +73,18 @@ for (const [fixture, prefix] of Object.entries(rules)) {
       `check-evidence.mjs on ${fixture} should not also report "${otherPrefix}"; got:\n${err}`,
     );
   }
+}
+
+// screenshot_sizes_first_only_for only exempts the screen it matches;
+// an unmatched screen still needs every size, even with the key set.
+{
+  const fixture = "fail-first-only-for-unmatched";
+  const { code, err } = run(checkEvidence, join(fixturesDir, fixture, "ticket"));
+  check(code === 1, `check-evidence.mjs should exit 1 on ${fixture} (got ${code})`);
+  check(
+    err.includes("screenshot-size:"),
+    `check-evidence.mjs on ${fixture} should report a "screenshot-size:" problem; got:\n${err}`,
+  );
 }
 
 // render-report.mjs renders the passing fixture into agent-report.html,

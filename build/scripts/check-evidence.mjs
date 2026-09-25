@@ -54,17 +54,16 @@ function main() {
   const config = loadConfig(projectRoot);
   const conventions = readConventions(projectRoot);
   const sizes = screenshotSizes(conventions);
-  const phoneOnlyGlobs = (config.screenshot_sizes_phone_only_for || []).map(globToRegExp);
-  const phoneSize = sizes[sizes.length - 1];
+  const firstOnlyGlobs = (config.screenshot_sizes_first_only_for || []).map(globToRegExp);
+  const firstSize = sizes[0];
 
   const ticket = readTicket(ticketFolder);
   const screenshotsDir = join(ticketFolder, "validation", "screenshots");
   const actualFiles = existsSync(screenshotsDir) ? readdirSync(screenshotsDir) : [];
 
   function requiredSizesFor(entry) {
-    const screen = entry.screen || entry.file || "";
-    const isPhoneOnly = phoneOnlyGlobs.some((re) => re.test(screen));
-    return isPhoneOnly && phoneSize ? [phoneSize] : sizes;
+    const isFirstOnly = firstOnlyGlobs.some((re) => re.test(entry.file || ""));
+    return isFirstOnly && firstSize ? [firstSize] : sizes;
   }
 
   // Rule: an exit-NN-* screenshot with no exit condition NN.
