@@ -1,6 +1,6 @@
 ---
 name: implement-ticket
-description: The loop for one ticket — `<slug> [--judge]`, typed by a person. Claims it, applying the ready gate as it moves the ticket from backlog to in-progress; creates or switches to its branch; starts the builder agent (Sonnet, the build method) and, only with --judge, the judge agent (Opus, the judge method) afterward — while the judge requests changes the builder works a review round on the findings, then the judge again, no round cap but a question after each judge round from the third on that still has findings. Opens the validation report, then asks the person to accept it (merge --no-ff, move the ticket to done, offer the next frontier ticket), request changes (another builder round), or stop without accepting.
+description: The loop for one ticket — `<slug> [--judge]`, typed by a person. Claims it, applying the ready gate as it moves the ticket from backlog to in-progress; creates or switches to its branch; starts the builder agent (the build method, on the model the project's workflow config names, sonnet by default) and, only with --judge, the judge agent (the judge method, opus by default) afterward — while the judge requests changes the builder works a review round on the findings, then the judge again, no round cap but a question after each judge round from the third on that still has findings. Opens the validation report, then asks the person to accept it (merge --no-ff, move the ticket to done, offer the next frontier ticket), request changes (another builder round), or stop without accepting.
 disable-model-invocation: true
 ---
 
@@ -38,6 +38,10 @@ first, in rounds, before the report reaches the person.
   builder skips every step it sees ticked.
 - The verdict, with `--judge`, always lives in `validation/verdict.md`;
   there is no pull request.
+- The project's workflow config (see the build skill's Conventions
+  section): `.claude/workflow.yml`, or every default when it and the
+  `workflow config` key are both absent. This loop reads `models`,
+  `judge_findings`, `evidence_recheck` and `parallel_tickets` from it.
 
 ## Asking
 
@@ -71,7 +75,8 @@ build method's own branch rule says.
 
 **3. Build.** Start the `builder` agent, pinned twice over — once in its
 own frontmatter, once again in the spawn (in Claude Code: `Agent` with
-the `builder` agent type and `model: sonnet`) — with the ticket's path,
+the `builder` agent type and `model:` the workflow config's
+`models.builder`, `sonnet` by default) — with the ticket's path,
 the branch, and one instruction: follow the build method to the
 hand-back. Wait. Read what came back: the report's path, the steps
 ticked, what was not tested. This session writes no code of its own;
@@ -79,17 +84,26 @@ from here its only writes are ticket moves, merges, and lines appended
 to `PROGRESS.md`.
 
 **4. Judge, only with `--judge`.** Start the `judge` agent, pinned to
-Opus, on the same working copy, with the ticket and one instruction:
-follow the judge method and give a verdict. Wait. It writes
-`validation/verdict.md`, committed, and appends `- [x] judge round <n>:
-pass` or `- [ ] judge round <n>: <finding>` lines to `PROGRESS.md`.
-Findings: start the builder again — a review round, in the build
-method's own sense — on the appended lines, then the judge again. No
-round cap, but every judge round from the third on that still has
-findings is followed by asking (see Asking): "Judge round <n> still has findings.",
-options "One more round (Recommended)" / "Show me the report and let me
-decide" / "Stop here". The last two both go to step 5 and stop the
-judge loop there, for the person to decide from the report.
+the workflow config's `models.judge` (`opus` by default), on the same
+working copy, with the ticket and one instruction: follow the judge
+method and give a verdict. Wait. It writes `validation/verdict.md`,
+committed, and appends `- [x] judge round <n>: pass` or `- [ ] judge
+round <n>: <label>: <finding>` lines to `PROGRESS.md`.
+
+Findings, all labelled `evidence` and `judge_findings: split` (default):
+start the builder again on the appended lines, then, instead of a full
+judge round, an `evidence_recheck: short-pass` (default) — a judge agent
+run pinned to `models.evidence` (`sonnet` by default) with one
+instruction: run `check-evidence.mjs` and reread only the changed
+screenshots and report sections, then give a verdict. Any other finding
+mix, or `evidence_recheck: full-round`, or `judge_findings:
+all-blocking`: start the builder on the appended lines, then the judge
+again, in full. No round cap, but every judge round from the third on
+that still has findings is followed by asking (see Asking): "Judge round
+<n> still has findings.", options "One more round (Recommended)" / "Show
+me the report and let me decide" / "Stop here". The last two both go to
+step 5 and stop the judge loop there, for the person to decide from the
+report.
 
 **5. Hand back.** Print the report's path —
 `items/<item>/tickets/in-progress/<slug>/validation/agent-report.html`
@@ -135,6 +149,13 @@ number), question "Accept NNNN: merge it and mark it done?", options:
 3. `git mv items/<item>/tickets/in-progress/<slug>
    items/<item>/tickets/done/<slug>`, commit `Done: <slug>`.
 4. `rm -f PROGRESS.md` — a leftover would mislead the next builder.
+5. With `--judge` and the last judge round a pass: write
+   `.claude/last-judged.json` at the repository root with the base
+   branch's current commit — `{"commit": "<git rev-parse HEAD>"}` —
+   untracked, like `PROGRESS.md`, never committed. The next ticket's
+   build reads it to decide whether `skip_baseline_when_judged` applies
+   (see the build skill). Without `--judge`, or a last round with
+   findings: leave any existing file as it is.
 
 Keep the branch; deleting it is the person's call, not this skill's.
 
@@ -149,7 +170,23 @@ is the ticket's state; the Status only follows it.
 `items/*/tickets/backlog/` whose every `Blocked by` slug has a
 folder in `done/`. HITL tickets are included — a person is right
 here. For a HITL ticket, say which step
-needs the person before starting it.
+needs the person before starting it. With `parallel_tickets` above `1`,
+see "Parallel tickets" below before starting only the one.
+
+## Parallel tickets
+
+`parallel_tickets: 1` (default): one ticket at a time, as every step
+above describes. Above `1`, and only when the project's Conventions
+declare `- isolated test run: <how>` — how each parallel run gets its
+own test resources (a database, a port) — this loop may start builders
+for more than one ready ticket at once: every AFK ticket on the frontier
+(see the write-tickets skill) that shares no blocking edge with another
+one already running, each in its own git worktree, each builder told its
+own test resources per the Conventions line. Without that Conventions
+line, `parallel_tickets` above `1` is ignored and tickets run one at a
+time regardless — this loop never invents test isolation a project has
+not declared. Judging, accepting and the next-ticket choice still happen
+one ticket at a time, in the order each builder finishes.
 
 ## Stop when
 
