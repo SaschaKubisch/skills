@@ -306,14 +306,21 @@ run: the commit, the commands, the exit codes, how long it took.
   recorded there for the commit step 4 would otherwise re-run stands in
   for it; nothing runs twice for the same commit. `false`: always run it
   again.
-- `skip_baseline_when_judged: true` (default): step 2 is skipped entirely
-  when `.claude/last-judged.json` at the repository root names a commit
-  matching the base branch's current head — that commit already passed a
-  judge round, so the baseline is known green. `implement-ticket`'s
-  accept step writes that file — a working file like `PROGRESS.md`,
-  never committed, added to `.git/info/exclude` if nothing ignores it
-  yet. No such file, or its commit does not
-  match the base's head: run step 2 as above. `false`: always run it.
+- `skip_baseline_when_judged: true` (default): step 2 is skipped when the
+  base branch's head is known green. Run `node
+  .claude/skills/build/scripts/baseline-known-green.mjs`: it reads
+  `.claude/last-judged.json` at the repository root — a working file
+  like `PROGRESS.md`, never committed, added to `.git/info/exclude` if
+  nothing ignores it yet; `implement-ticket`'s accept step writes it —
+  and prints one line, `yes: <reason>` or `no: <reason>`, exiting 0 or 1
+  to match. It says yes when the base's current head is exactly the
+  recorded commit, or when every commit since only changed paths under
+  `items/` or `.claude/` (`git diff --name-only <recorded>..<base
+  head>` lists nothing else) — a ticket claim, a ticket move, or a
+  skill reinstall cannot have broken the baseline a judge round already
+  checked, and in practice always lands between the recorded commit and
+  the next ticket's build. No recorded commit, or `no`: run step 2 as
+  above. `false`: always run it.
 
 ## Checklist
 

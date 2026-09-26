@@ -156,8 +156,11 @@ number), question "Accept NNNN: merge it and mark it done?", options:
    repository root with the base branch's current commit —
    `{"commit": "<git rev-parse HEAD>"}` — a working file like
    `PROGRESS.md`, never committed; add it to `.git/info/exclude` if
-   nothing ignores it yet. The next ticket's build reads it to decide
-   whether `skip_baseline_when_judged` applies (see the build skill).
+   nothing ignores it yet. A later build checks it with
+   `baseline-known-green.mjs` to decide whether
+   `skip_baseline_when_judged` applies — still safe after this ticket's
+   own claim commit and any skill reinstall land on `<base>` in between,
+   since those only touch `items/` and `.claude/` (see the build skill).
    False: something else landed on `<base>` since the judge checked, so
    `<base>` no longer holds exactly what was judged — remove any
    existing `.claude/last-judged.json` instead. Without `--judge`, or a
