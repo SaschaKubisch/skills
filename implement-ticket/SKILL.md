@@ -41,7 +41,7 @@ first, in rounds, before the report reaches the person.
 - The project's workflow config (see the build skill's Conventions
   section): `.claude/workflow.yml`, or every default when it and the
   `workflow config` key are both absent. This loop reads `models`,
-  `judge_findings`, `evidence_recheck` and `parallel_tickets` from it.
+  `review.evidence_findings` and `parallel.tickets` from it.
 
 ## Asking
 
@@ -90,16 +90,16 @@ method and give a verdict. Wait. It writes `validation/verdict.md`,
 committed, and appends `- [x] judge round <n>: pass` or `- [ ] judge
 round <n>: <label>: <finding>` lines to `PROGRESS.md`.
 
-Findings, all labelled `evidence` and `judge_findings: split` (default):
-start the builder again on the appended lines, then, instead of a full
-judge round, an `evidence_recheck: short-pass` (default) — a judge agent
-run pinned to `models.evidence` (`sonnet` by default) with one
-instruction: run `check-evidence.mjs` and reread only the changed
-screenshots and report sections, then give a verdict. Any other finding
-mix, or `evidence_recheck: full-round`, or `judge_findings:
-all-blocking`: start the builder on the appended lines, then the judge
-again, in full. No round cap, but every judge round from the third on
-that still has findings is followed by asking (see Asking): "Judge round
+Findings, all labelled `evidence`, with `review.evidence_findings:
+recheck` (default): start the builder again on the appended lines, then,
+instead of a full judge round, a short recheck — a judge agent run
+pinned to `models.recheck` (`sonnet` by default) with one instruction:
+run `check-evidence.mjs` and reread only the changed screenshots and
+report sections, then give a verdict. Any other finding mix, or
+`review.evidence_findings: full-round`: start the builder on the
+appended lines, then the judge again, in full. No round cap, but every
+judge round from the third on that still has findings is followed by
+asking (see Asking): "Judge round
 <n> still has findings.", options "One more round (Recommended)" / "Show
 me the report and let me decide" / "Stop here". The last two both go to
 step 5 and stop the judge loop there, for the person to decide from the
@@ -163,12 +163,12 @@ is the ticket's state; the Status only follows it.
 `items/*/tickets/backlog/` whose every `Blocked by` slug has a
 folder in `done/`. HITL tickets are included — a person is right
 here. For a HITL ticket, say which step
-needs the person before starting it. With `parallel_tickets` above `1`,
+needs the person before starting it. With `parallel.tickets` above `1`,
 see "Parallel tickets" below before starting only the one.
 
 ## Parallel tickets
 
-`parallel_tickets: 1` (default): one ticket at a time, as every step
+`parallel.tickets: 1` (default): one ticket at a time, as every step
 above describes. Above `1`, and only when the project's Conventions
 declare `- isolated test run: <how>` — how each parallel run gets its
 own test resources (a database, a port) — this loop may start builders
@@ -176,7 +176,7 @@ for more than one ready ticket at once: every AFK ticket on the frontier
 (see the write-tickets skill) that shares no blocking edge with another
 one already running, each in its own git worktree, each builder told its
 own test resources per the Conventions line. Without that Conventions
-line, `parallel_tickets` above `1` is ignored and tickets run one at a
+line, `parallel.tickets` above `1` is ignored and tickets run one at a
 time regardless — this loop never invents test isolation a project has
 not declared. Judging, accepting and the next-ticket choice still happen
 one ticket at a time, in the order each builder finishes.

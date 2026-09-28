@@ -1,8 +1,16 @@
-# .claude/workflow.yml — how the building skills work in this project.
-evidence_check: script          # script | judge   (build/scripts/check-evidence.mjs, or the judge alone)
-judge_findings: split           # split | all-blocking   (label each finding behaviour or evidence)
-evidence_recheck: short-pass    # short-pass | full-round   (an all-evidence round's recheck)
-e2e_workers: 1                  # >1 needs per-worker databases and ports
-share_suite_result: true        # trust a recorded whole-suite result for the same commit
-parallel_tickets: 1             # >1 needs isolated test resources per run
-models: { builder: sonnet, judge: opus, evidence: sonnet }
+# .claude/workflow.yml — how build, judge and implement-ticket work in this project.
+# A key left out takes its default.
+
+models:
+  builder: sonnet
+  judge: opus
+  recheck: sonnet             # the short recheck after an evidence-only judge round
+
+review:
+  evidence: script            # script | judge — check-evidence.mjs first, or the judge alone
+  evidence_findings: recheck  # recheck | full-round — what follows a judge round whose findings are all evidence
+  reuse_suite_run: true       # the judge accepts a recorded whole-suite run for the same commit
+
+parallel:
+  tickets: 1                  # >1 only with a Conventions `isolated test run` line
+  e2e_workers: 1              # >1 needs per-worker databases and ports

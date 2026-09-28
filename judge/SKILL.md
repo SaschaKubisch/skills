@@ -36,12 +36,12 @@ holds `ticket.md` and `validation/`.
 - The project's workflow config (see the build skill's Conventions
   section): `.claude/workflow.yml`, or every default when it and the
   `workflow config` key are both absent. This method reads
-  `evidence_check`, `judge_findings`, `evidence_recheck` and
-  `share_suite_result` from it.
+  `models.recheck`, `review.evidence`, `review.evidence_findings` and
+  `review.reuse_suite_run` from it.
 
 ## Do
 
-**1. Run everything again.** With `evidence_check: script` (default), run
+**1. Run everything again.** With `review.evidence: script` (default), run
 `node .claude/skills/build/scripts/check-evidence.mjs <ticket-folder>`
 first (the build skill's own script, at its installed path — see its
 workflow config section for where it sits in the skills repo itself) —
@@ -50,7 +50,7 @@ Then every command in the ticket's exit-condition block, and the checks
 from Conventions, yourself, in the worktree, comparing each exit code
 with the report's table; a claimed pass that fails here is a finding, so
 is a command the report does not list. The end-to-end command, the same
-way, unless `share_suite_result: true` (default) and
+way, unless `review.reuse_suite_run: true` (default) and
 `validation/suite-runs.json` already records a whole-suite run — see the
 build skill — for the exact commit under test; then trust that recorded
 run instead of running it again. Every command runs in the foreground
@@ -103,14 +103,16 @@ the spec line it breaks or the words "nobody asked for this".
   Rounds section; commit `verdict.md` and the report together —
   `PROGRESS.md` is a working file and is not. The builder works them.
 
-With `judge_findings: split` (default) and every finding of this round
-labelled `evidence`, say so in `verdict.md`: `implement-ticket` runs the
-builder's fix, then, with `evidence_recheck: short-pass` (default), a
-short recheck instead of a full round — `check-evidence.mjs` plus reading
-only the changed screenshots and report sections, on the model
-`models.evidence` names (see the build skill's workflow config). A round
-mixing `behaviour` findings with `evidence` ones, or `judge_findings:
-all-blocking`, gets a full judge round regardless.
+Every finding is labelled `behaviour` or `evidence`, always. When every
+finding of this round is labelled `evidence`, say so in `verdict.md`:
+with `review.evidence_findings: recheck` (default), `implement-ticket`
+runs the builder's fix, then a short recheck instead of a full round —
+`check-evidence.mjs` plus reading only the changed screenshots and
+report sections, on the model `models.recheck` names (see the build
+skill's workflow config). With `review.evidence_findings: full-round`,
+an all-evidence round gets a full judge round instead. A round mixing
+`behaviour` findings with `evidence` ones always gets a full judge round,
+regardless of `review.evidence_findings`.
 
 A finding is never "improve", "consider" or "maybe". It names one thing
 that is wrong and one thing that would make it right.

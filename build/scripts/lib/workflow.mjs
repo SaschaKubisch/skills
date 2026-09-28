@@ -5,37 +5,49 @@ import { readFileSync, existsSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 
 // The defaults from the shipped workflow.yml. A project's file only needs
-// to name the keys it changes; every other key takes the value here.
+// to name the groups and keys it changes; every other key takes the
+// value here.
 export const defaultConfig = {
-  evidence_check: "script",
-  judge_findings: "split",
-  evidence_recheck: "short-pass",
-  e2e_workers: 1,
-  share_suite_result: true,
-  parallel_tickets: 1,
-  models: { builder: "sonnet", judge: "opus", evidence: "sonnet" },
+  models: { builder: "sonnet", judge: "opus", recheck: "sonnet" },
+  review: { evidence: "script", evidence_findings: "recheck", reuse_suite_run: true },
+  parallel: { tickets: 1, e2e_workers: 1 },
 };
 
-// Reads the flat, one-key-per-line YAML this project's workflow.yml uses:
-// comments after "#", a list as [] or [a, b, c], one inline map,
-// { k: v, k: v }, and a value or list item optionally wrapped in one
-// matching pair of single or double quotes (stripped on read; a bare
-// glob like *kitchen* needs none). Not a general YAML reader — it only
-// needs to read the shape workflow.yml is written in.
+// Reads the grouped YAML this project's workflow.yml uses: comments after
+// "#"; a top-level `key: value` scalar; and one level of block groups —
+// a top-level line `name:` with no value opens a group, and the lines
+// that follow it, indented by spaces (`  key: value`), belong to that
+// group until the next non-indented line. A value is optionally wrapped
+// in one matching pair of single or double quotes (stripped on read).
+// Not a general YAML reader — it only needs to read the shape
+// workflow.yml is written in.
 export function parseYaml(text) {
   const config = {};
+  let group = null;
   for (const rawLine of text.split("\n")) {
     let line = rawLine;
     const hash = line.indexOf("#");
     if (hash !== -1) line = line.slice(0, hash);
-    line = line.trim();
-    if (!line) continue;
+    if (!line.trim()) continue;
+
+    const indented = /^\s/.test(line);
     const colon = line.indexOf(":");
     if (colon === -1) continue;
     const key = line.slice(0, colon).trim();
     const value = line.slice(colon + 1).trim();
     if (!key) continue;
-    config[key] = parseScalarOrList(value);
+
+    if (!indented) {
+      if (value) {
+        group = null;
+        config[key] = parseScalar(value);
+      } else {
+        group = {};
+        config[key] = group;
+      }
+    } else if (group) {
+      group[key] = parseScalar(value);
+    }
   }
   return config;
 }
@@ -53,28 +65,7 @@ function stripQuotes(s) {
   return s;
 }
 
-function parseScalarOrList(value) {
-  if (value.startsWith("[") && value.endsWith("]")) {
-    const inner = value.slice(1, -1).trim();
-    if (!inner) return [];
-    return inner
-      .split(",")
-      .map((s) => stripQuotes(s.trim()))
-      .filter((s) => s.length > 0);
-  }
-  if (value.startsWith("{") && value.endsWith("}")) {
-    const inner = value.slice(1, -1).trim();
-    const map = {};
-    if (!inner) return map;
-    for (const pair of inner.split(",")) {
-      const colon = pair.indexOf(":");
-      if (colon === -1) continue;
-      const k = stripQuotes(pair.slice(0, colon).trim());
-      const v = stripQuotes(pair.slice(colon + 1).trim());
-      if (k) map[k] = v;
-    }
-    return map;
-  }
+function parseScalar(value) {
   const scalar = stripQuotes(value);
   if (scalar === "true") return true;
   if (scalar === "false") return false;
@@ -105,14 +96,31 @@ export function findProjectRoot(startPath) {
   }
 }
 
-// Loads the project's workflow config: every default, overridden by
-// whatever .claude/workflow.yml under the project root names. A missing
-// file is not an error — it means every default applies.
+// Loads the project's workflow config: every default, overridden one
+// level deep by whatever .claude/workflow.yml under the project root
+// names. A group the project file sets (e.g. `review:`) keeps every key
+// it does not mention at its default; a missing file is not an error —
+// it means every default applies.
 export function loadConfig(projectRoot) {
   const path = join(projectRoot, ".claude", "workflow.yml");
-  const config = { ...defaultConfig };
+  const config = {};
+  for (const [key, value] of Object.entries(defaultConfig)) {
+    config[key] = typeof value === "object" && value !== null ? { ...value } : value;
+  }
   if (existsSync(path)) {
-    Object.assign(config, parseYaml(readFileSync(path, "utf8")));
+    const overrides = parseYaml(readFileSync(path, "utf8"));
+    for (const [key, value] of Object.entries(overrides)) {
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        typeof config[key] === "object" &&
+        config[key] !== null
+      ) {
+        Object.assign(config[key], value);
+      } else {
+        config[key] = value;
+      }
+    }
   }
   return config;
 }

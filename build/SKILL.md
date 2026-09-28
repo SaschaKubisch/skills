@@ -86,30 +86,36 @@ every default in the next section.
 
 ## The workflow config
 
-A file of flat, commented keys, `.claude/workflow.yml`, tunes how this
-method, `judge` and `implement-ticket` work in this project — `install.sh`
-copies a starting one, never over a project's own. One `key: value` per
-line; a list is written `[]` or `[a, b]`; `models` is the one inline map.
-A key the file leaves out, or a missing file, takes the default below.
+A file of commented keys grouped under `models:`, `review:` and
+`parallel:`, `.claude/workflow.yml`, tunes how this method, `judge` and
+`implement-ticket` work in this project — `install.sh` copies a starting
+one, never over a project's own. A key a group leaves out, a group the
+file leaves out, or a missing file, takes the default below.
 
-- `evidence_check` — `script` (default) or `judge`. `script`: this
-  method runs `.claude/skills/build/scripts/check-evidence.mjs
-  <ticket-folder>` before hand-back and fixes everything it reports —
-  the path a project installs it at; in the skills repo itself, the
-  scripts below sit at `build/scripts/` — `judge` also runs it first.
-  `judge`: the script does not run; only the judge's own reading of the
-  screenshots and report catches evidence problems.
-- `judge_findings` — `split` (default) or `all-blocking`. `judge`'s own
-  key; see that method.
-- `evidence_recheck` — `short-pass` (default) or `full-round`. `judge`'s
-  and `implement-ticket`'s own key; see those methods.
-- `e2e_workers` — `1` (default). See "Parallel end to end" below.
-- `share_suite_result` — `true` by default. See "The whole-suite record"
+`models`:
+- `builder` — `sonnet` (default). The model that works a ticket.
+- `judge` — `opus` (default). The model that checks a builder's work.
+- `recheck` — `sonnet` (default). The model of the short recheck agent
+  that follows an evidence-only judge round; `implement-ticket`'s own
+  key, see that method.
+
+`review`:
+- `evidence` — `script` (default) or `judge`. `script`: this method runs
+  `.claude/skills/build/scripts/check-evidence.mjs <ticket-folder>`
+  before hand-back and fixes everything it reports — the path a project
+  installs it at; in the skills repo itself, the scripts below sit at
+  `build/scripts/` — `judge` also runs it first. `judge`: the script does
+  not run; only the judge's own reading of the screenshots and report
+  catches evidence problems.
+- `evidence_findings` — `recheck` (default) or `full-round`. `judge`'s
+  own key; see that method.
+- `reuse_suite_run` — `true` by default. See "The whole-suite record"
   below.
-- `parallel_tickets` — `1` (default). `implement-ticket`'s own key; see
-  that method.
-- `models` — `{ builder: sonnet, judge: opus, evidence: sonnet }` by
-  default. `implement-ticket`'s own key; see that method.
+
+`parallel`:
+- `tickets` — `1` (default). `implement-ticket`'s own key; see that
+  method.
+- `e2e_workers` — `1` (default). See "Parallel end to end" below.
 
 ## Do
 
@@ -168,7 +174,7 @@ the ticket's `validation/screenshots/` folder as it is captured.
 
 **Parallel end to end.** The end-to-end command from Conventions is what
 runs; a project that wants it against a production build puts that in
-its `end to end:` line. `e2e_workers` above `1` is passed to the
+its `end to end:` line. `parallel.e2e_workers` above `1` is passed to the
 end-to-end runner as its worker count; it needs the project to give
 each worker its own test resources (a database, a port), documented the
 same way — without that, run with one worker regardless of the key's
@@ -196,7 +202,7 @@ Commit the report, `report.json`, and `validation/screenshots/` every
 time they are written — `<type>(<NNNN>): report` — so the tree is clean
 for the judge and for the merge `implement-ticket` makes on accept.
 
-**6. Hand back.** With `evidence_check: script` (default), run `node
+**6. Hand back.** With `review.evidence: script` (default), run `node
 .claude/skills/build/scripts/check-evidence.mjs <ticket-folder>` and fix
 everything it reports before anything else here — each line it prints
 names one problem with the screenshots or the report against the ticket
@@ -273,7 +279,7 @@ exit-conditions command run together, back to back, nothing failing in
 between. Append each one to `validation/suite-runs.json` — one line per
 run: the commit, the commands, the exit codes, how long it took.
 
-- `share_suite_result: true` (default): a whole-suite run already
+- `review.reuse_suite_run: true` (default): a whole-suite run already
   recorded there for the commit step 4 would otherwise re-run stands in
   for it; nothing runs twice for the same commit. `false`: always run it
   again.
