@@ -6,8 +6,8 @@
 //
 // Reads validation/report.json, the ticket's Exit conditions and
 // Invariants this touches, and the project's Conventions screenshot
-// sizes and workflow config. Prints one line per problem and exits 1;
-// prints one PASS line and exits 0 when there is nothing to report.
+// sizes. Prints one line per problem and exits 1; prints one PASS line
+// and exits 0 when there is nothing to report.
 //
 // See build/SKILL.md's "## Evidence" section for what each rule means
 // and the report.json schema this script reads.
@@ -16,17 +16,11 @@ import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, basename } from "node:path";
 import {
   findProjectRoot,
-  loadConfig,
   readConventions,
   screenshotSizes,
   readTicket,
   normalizeInvariantId,
 } from "./lib/workflow.mjs";
-
-function globToRegExp(glob) {
-  const escaped = glob.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
-  return new RegExp(`^${escaped}$`);
-}
 
 function main() {
   const ticketFolder = process.argv[2];
@@ -51,20 +45,12 @@ function main() {
   }
 
   const projectRoot = findProjectRoot(ticketFolder);
-  const config = loadConfig(projectRoot);
   const conventions = readConventions(projectRoot);
   const sizes = screenshotSizes(conventions);
-  const firstOnlyGlobs = (config.screenshot_sizes_first_only_for || []).map(globToRegExp);
-  const firstSize = sizes[0];
 
   const ticket = readTicket(ticketFolder);
   const screenshotsDir = join(ticketFolder, "validation", "screenshots");
   const actualFiles = existsSync(screenshotsDir) ? readdirSync(screenshotsDir) : [];
-
-  function requiredSizesFor(entry) {
-    const isFirstOnly = firstOnlyGlobs.some((re) => re.test(entry.file || ""));
-    return isFirstOnly && firstSize ? [firstSize] : sizes;
-  }
 
   // Rule: an exit-NN-* screenshot with no exit condition NN.
   for (const file of actualFiles) {
@@ -98,7 +84,7 @@ function main() {
     for (const size of entrySizes) {
       named.add(`${entry.file}-${size}.png`);
     }
-    for (const size of requiredSizesFor(entry)) {
+    for (const size of sizes) {
       const filename = `${entry.file}-${size}.png`;
       const declared = entrySizes.includes(size);
       const onDisk = actualFiles.includes(filename);

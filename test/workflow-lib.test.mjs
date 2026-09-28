@@ -12,24 +12,6 @@ function check(condition, message) {
   }
 }
 
-// Unquoted list items parse as written.
-{
-  const config = parseYaml("screenshot_sizes_first_only_for: [*kitchen*, *staff*]\n");
-  check(
-    JSON.stringify(config.screenshot_sizes_first_only_for) === JSON.stringify(["*kitchen*", "*staff*"]),
-    `unquoted list items should parse without quotes; got ${JSON.stringify(config.screenshot_sizes_first_only_for)}`,
-  );
-}
-
-// Quoted list items, single or double, have their quotes stripped.
-{
-  const config = parseYaml(`screenshot_sizes_first_only_for: ["*kitchen*", '*staff*']\n`);
-  check(
-    JSON.stringify(config.screenshot_sizes_first_only_for) === JSON.stringify(["*kitchen*", "*staff*"]),
-    `quoted list items should have their quotes stripped; got ${JSON.stringify(config.screenshot_sizes_first_only_for)}`,
-  );
-}
-
 // An unquoted scalar parses as written.
 {
   const config = parseYaml(`evidence_check: judge\n`);
@@ -77,7 +59,7 @@ function check(condition, message) {
 
 if (fail === 0) {
   console.log(
-    "PASS: parseYaml strips matching quotes from list items, scalar values and inline-map values, and leaves unquoted forms unchanged.",
+    "PASS: parseYaml strips matching quotes from scalar values and inline-map values, and leaves unquoted forms unchanged.",
   );
 }
 process.exit(fail);

@@ -54,8 +54,8 @@ way, unless `share_suite_result: true` (default) and
 `validation/suite-runs.json` already records a whole-suite run — see the
 build skill — for the exact commit under test; then trust that recorded
 run instead of running it again. Every command runs in the foreground
-with a timeout long enough to finish, per `background_waits` (default
-`foreground`); never write a sleep loop to poll for one's result.
+with a timeout long enough to finish; never write a sleep loop to poll
+for one's result.
 
 **2. Read the diff for softening.** A test deleted, skipped, marked
 `.only`, weakened, or with its assertion commented; a spec, a ticket's

@@ -184,7 +184,4 @@ node "$here/test/workflow-lib.test.mjs" || fail=1
 # the evidence and report scripts, against their fixtures
 node "$here/test/scripts.test.mjs" || fail=1
 
-# the baseline-known-green check, against small git repos built on the fly
-node "$here/test/baseline-known-green.test.mjs" || fail=1
-
 exit "$fail"

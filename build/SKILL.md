@@ -103,30 +103,9 @@ A key the file leaves out, or a missing file, takes the default below.
   key; see that method.
 - `evidence_recheck` — `short-pass` (default) or `full-round`. `judge`'s
   and `implement-ticket`'s own key; see those methods.
-- `report` — `from-data` (default) or `handwritten`. `from-data`: this
-  method writes `validation/report.json` (schema below), then renders
-  `validation/agent-report.html` from it with
-  `.claude/skills/build/scripts/render-report.mjs <ticket-folder>`.
-  `handwritten`: the report is written by hand, as the template further
-  below lays it out, with no `report.json`.
-- `screenshots_capture` — `once` (default) or `every-round`. `once`:
-  every screenshot is captured in a single pass, right after the last
-  code change of a round — not once per step. `every-round`: capture
-  happens per step, as an earlier round of this project might.
-- `screenshot_sizes_first_only_for` — a list of screenshot-name globs
-  (matched against `screenshots[].file`, e.g. `*kitchen*`), `[]` by
-  default. A screenshot matching one only needs the first size the
-  Conventions `screenshots` line lists — the desktop size — captured and
-  checked; every other screen still needs every declared size.
-- `e2e_server` — `dev` (default) or `production`; `e2e_workers` — `1`
-  (default). See "Production and parallel end to end" below.
-- `share_suite_result`, `skip_baseline_when_judged` — both `true` by
-  default. See "The whole-suite record" below.
-- `background_waits` — `foreground` (default) or `poll`. `foreground`:
-  every long command runs in the foreground with a timeout long enough
-  to finish; a sleep loop that polls for a result is never written,
-  here or in `judge`. `poll` allows one, when the harness gives no other
-  way to wait.
+- `e2e_workers` — `1` (default). See "Parallel end to end" below.
+- `share_suite_result` — `true` by default. See "The whole-suite record"
+  below.
 - `parallel_tickets` — `1` (default). `implement-ticket`'s own key; see
   that method.
 - `models` — `{ builder: sonnet, judge: opus, evidence: sonnet }` by
@@ -143,9 +122,7 @@ person already prepared it.
 
 **2. The checks pass first.** Step 1 of every ticket: the walking
 skeleton on an empty repository, or the baseline confirmed on a green one,
-or the checks repaired on a red one. Nothing else in that step. Skipped
-when `skip_baseline_when_judged` applies — see "The whole-suite record"
-below.
+or the checks repaired on a red one. Nothing else in that step.
 
 **3. Every step, test first.** For each unticked step, in order:
 
@@ -164,14 +141,14 @@ skip it silently.
 **4. Validate, cheapest first.** The checks from Conventions, cheapest
 first, then the end-to-end command from Conventions, then the ticket's
 exit-conditions block as it stands. All green, or stop at the first red
-and go back to step 3. Record every whole-suite run in
+and go back to step 3. Every command runs in the foreground with a
+timeout long enough to finish; a sleep loop that polls for a result is
+never written, here or in `judge`. Record every whole-suite run in
 `validation/suite-runs.json` — see "The whole-suite record" below.
 
 With a UI, end to end is mandatory, and three sets of shots exist before
 validation counts, each captured by Conventions' screenshot method, at
-every size Conventions declares (or only the first size, the desktop
-size Conventions lists first, for a screenshot
-`screenshot_sizes_first_only_for` names):
+every size Conventions declares:
 
 - **One full walkthrough** of the flow the ticket delivers, as a user
   would do it, with a shot at every screen it passes, at every declared
@@ -185,23 +162,17 @@ size Conventions lists first, for a screenshot
 - **One test per exit condition a screen can observe**, named
   `exit-<NN>-<slug>`, with its shot.
 
-With `screenshots_capture: once` (default), capture every one of these in
-a single pass, right after the last code change of the round — not once
-per step; `every-round` captures as each step lands instead. Save each
-shot straight into the ticket's `validation/screenshots/` folder as it is
-captured.
+Capture every one of these in a single pass, right after the last code
+change of the round — never once per step. Save each shot straight into
+the ticket's `validation/screenshots/` folder as it is captured.
 
-**Production and parallel end to end.** `e2e_server: production` runs
-the end-to-end command from Conventions against a production build
-instead of the dev server named there — only when the project documents
-how (its own script or Conventions line); confirm that documentation
-exists before relying on it, and stop and say the project has no
-production end-to-end support if it does not. This method never adds
-that support itself — it is a project change, done as its own ticket.
-`e2e_workers` above `1` is passed to the end-to-end runner as its worker
-count; it needs the project to give each worker its own test resources
-(a database, a port), documented the same way — without that, run with
-one worker regardless of the key's value.
+**Parallel end to end.** The end-to-end command from Conventions is what
+runs; a project that wants it against a production build puts that in
+its `end to end:` line. `e2e_workers` above `1` is passed to the
+end-to-end runner as its worker count; it needs the project to give
+each worker its own test resources (a database, a port), documented the
+same way — without that, run with one worker regardless of the key's
+value.
 
 **5. The report.** `validation/agent-report.html` in the ticket folder,
 self-contained: screenshots by relative path in `screenshots/`, no
@@ -214,19 +185,16 @@ code as built, whole, with this ticket's changes highlighted; the
 rounds — the judge's, and the person's requested changes — appended as
 they happen.
 
-With `report: from-data` (default): write `validation/report.json` first
-(schema below), then run `node
+Write `validation/report.json` first (schema below), then run `node
 .claude/skills/build/scripts/render-report.mjs <ticket-folder>` to
 produce the HTML from it. Regenerate `report.json` whole after every
 round, then re-render; the one edit anyone else makes is the judge's
 line appended to `report.json`'s `rounds`, which the next regeneration
-carries over. With `report: handwritten`: write the HTML directly, from
-the template further below, the same way each round.
+carries over.
 
-Commit the report (and `report.json`, with `from-data`) and
-`validation/screenshots/` every time they are written —
-`<type>(<NNNN>): report` — so the tree is clean for the judge and for
-the merge `implement-ticket` makes on accept.
+Commit the report, `report.json`, and `validation/screenshots/` every
+time they are written — `<type>(<NNNN>): report` — so the tree is clean
+for the judge and for the merge `implement-ticket` makes on accept.
 
 **6. Hand back.** With `evidence_check: script` (default), run `node
 .claude/skills/build/scripts/check-evidence.mjs <ticket-folder>` and fix
@@ -285,15 +253,18 @@ Never argue a finding away in silence.
 exit-conditions block; the one whole-suite run of the round (see step 4)
 has `whole_suite: true`, on the commit it ran on — `check-evidence.mjs`'s
 whole-suite rule reads exactly this. `screenshots[].sizes` names every
-size actually captured for that shot — the sizes required (all of
-Conventions', or the first one alone when `.file` matches a
-`screenshot_sizes_first_only_for` glob) must be among them, and each
-must exist as `<file>-<size>.png` under `validation/screenshots/`.
-`screenshots[].file` matches its filenames without the size suffix, and
-carries the `walkthrough-`, `invariant-` or `exit-` prefix the naming
-rules above give it. `diagrams[].text` is the fenced block's contents
-without the fence, one entry per diagram kind (module graph, schema,
-sequence, lifecycle) the template below lists.
+size actually captured for that shot — every size Conventions declares
+must be among them, and each must exist as `<file>-<size>.png` under
+`validation/screenshots/`. `screenshots[].file` matches its filenames
+without the size suffix, and carries the `walkthrough-`, `invariant-` or
+`exit-` prefix the naming rules above give it. `diagrams[].text` is the
+fenced block's contents without the fence, one entry per diagram kind:
+module graph, schema, sequence, lifecycle. Each diagram is drawn from
+the code as built after the ticket, whole; this ticket's changes are in
+a `changed` class (e.g. `classDef changed fill:#fff3bf,stroke:#b38600`
+in a flowchart), removed parts dashed. The module-and-dependency diagram
+carries a caption of at most five sentences: what changed and which
+steps did it.
 
 ## The whole-suite record
 
@@ -306,21 +277,6 @@ run: the commit, the commands, the exit codes, how long it took.
   recorded there for the commit step 4 would otherwise re-run stands in
   for it; nothing runs twice for the same commit. `false`: always run it
   again.
-- `skip_baseline_when_judged: true` (default): step 2 is skipped when the
-  base branch's head is known green. Run `node
-  .claude/skills/build/scripts/baseline-known-green.mjs`: it reads
-  `.claude/last-judged.json` at the repository root — a working file
-  like `PROGRESS.md`, never committed, added to `.git/info/exclude` if
-  nothing ignores it yet; `implement-ticket`'s accept step writes it —
-  and prints one line, `yes: <reason>` or `no: <reason>`, exiting 0 or 1
-  to match. It says yes when the base's current head is exactly the
-  recorded commit, or when every commit since only changed paths under
-  `items/` or `.claude/` (`git diff --name-only <recorded>..<base
-  head>` lists nothing else) — a ticket claim, a ticket move, or a
-  skill reinstall cannot have broken the baseline a judge round already
-  checked, and in practice always lands between the recorded commit and
-  the next ticket's build. No recorded commit, or `no`: run step 2 as
-  above. `false`: always run it.
 
 ## Checklist
 
@@ -365,79 +321,6 @@ checks.
 - A blocked-by ticket is not in `done/`: stop before the branch.
 - The branch is about to be pushed or a pull request opened: it is not.
   How it lands is not this method's job; the report is the hand-back.
-
-## The report template
-
-The layout `render-report.mjs` renders from `report.json`, and the one to
-follow by hand with `report: handwritten`:
-
-```html
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>NNNN — <title>: validation report</title>
-<style>
-  body { font: 15px/1.5 system-ui, sans-serif; max-width: 60rem; margin: 2rem auto; padding: 0 1rem; color: #222; }
-  table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #ccc; padding: .3rem .5rem; text-align: left; }
-  .pass { color: #1a7f37; } .fail { color: #b3261e; }
-  figure { margin: 1rem 0; } figure img { max-width: 100%; border: 1px solid #ccc; } figcaption { font-size: .9em; color: #555; }
-  pre { background: #f6f6f6; padding: .5rem; overflow-x: auto; }
-</style>
-<script type="module">
-  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-  mermaid.initialize({ startOnLoad: true });
-</script>
-</head>
-<body>
-<h1>NNNN — <title>: validation report</h1>
-<p>Ticket <code>items/&lt;item&gt;/tickets/&lt;column&gt;/NNNN-&lt;slug&gt;/ticket.md</code> · spec <code>&lt;parent&gt;</code> · branch <code>&lt;branch&gt;</code> · run &lt;started&gt; to &lt;ended&gt;, ended by &lt;exit conditions passed | a step could not be finished | stopped by a person&gt;</p>
-
-<h2>Implemented</h2>
-<ol><li>step 1: <what exists now because of it></li></ol>
-
-<h2>Tests</h2>
-<table><tr><th>Kind</th><th>Test</th><th>Proves</th><th>Result</th><th>Evidence</th></tr>
-<tr><td>unit</td><td><name></td><td><step or invariant></td><td class="pass">pass</td><td></td></tr>
-<tr><td>end to end</td><td>invariant-04-order-total</td><td>invariant 4</td><td class="pass">pass</td><td><a href="screenshots/invariant-04-order-total.png">screenshot</a></td></tr>
-</table>
-<pre><command>   exit 0
-<command>   exit 0</pre>
-
-<h2>Not tested</h2>
-<ul><li><what>, because <reason></li></ul>
-
-<h2>Screenshots</h2>
-<h3>Walkthrough</h3>
-<figure><img src="screenshots/walkthrough-01-<screen>.png" alt=""><figcaption><what to look at></figcaption></figure>
-<h3>Invariants</h3>
-<figure><img src="screenshots/invariant-04-order-total.png" alt=""><figcaption>invariant 4: <what to look at></figcaption></figure>
-<h3>Exit conditions</h3>
-<figure><img src="screenshots/exit-01-<slug>.png" alt=""><figcaption><what to look at></figcaption></figure>
-
-<h2>Diagrams</h2>
-<p>The code as built after this ticket, drawn from the code, whole; what this ticket changed is in class <code>changed</code>, removed parts dashed.</p>
-<h3>Modules and dependencies</h3>
-<pre class="mermaid">flowchart LR
-  classDef changed fill:#fff3bf,stroke:#b38600
-  ...</pre>
-<p><at most five sentences: what changed and which steps did it></p>
-<h3>Schema</h3>
-<pre class="mermaid">erDiagram
-  ...</pre>
-<h3>Sequence: <the flow this ticket delivered></h3>
-<pre class="mermaid">sequenceDiagram
-  ...</pre>
-<h3>Lifecycle</h3>
-<pre class="mermaid">stateDiagram-v2
-  ...</pre>
-
-<h2>Rounds</h2>
-<ol><li>judge round 1: <findings, one line each, and what changed for each></li>
-<li>change round 1: <the person's requested changes, one line each, and what changed for each></li></ol>
-</body>
-</html>
-```
 
 ## Attribution
 

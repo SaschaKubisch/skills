@@ -158,14 +158,12 @@ later tickets do not detect it again.
 
 `.claude/workflow.yml` tunes how `build`, `judge` and `implement-ticket`
 work in a project — evidence checking, how findings and rechecks split
-between behaviour and evidence, the report's source, when screenshots
-are captured and at what sizes, the end-to-end server and worker count,
-sharing a recorded whole-suite result, skipping an already-judged
-baseline, running everything in the foreground, working tickets in
-parallel, and which model each agent runs on. `install.sh` copies a
-starting file, never over a project's own; every key it leaves out takes
-its default. See `build/SKILL.md`'s "The workflow config" section for
-every key, its default, and what it changes.
+between behaviour and evidence, the end-to-end worker count, sharing a
+recorded whole-suite result, working tickets in parallel, and which
+model each agent runs on. `install.sh` copies a starting file, never
+over a project's own; every key it leaves out takes its default. See
+`build/SKILL.md`'s "The workflow config" section for every key, its
+default, and what it changes.
 
 ## Licence
 
