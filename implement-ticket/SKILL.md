@@ -22,9 +22,9 @@ first, in rounds, before the report reaches the person.
 ## Look first
 
 - The ticket, and its column.
-- `.claude/agents/builder.md` (model: sonnet) and `.claude/agents/judge.md`
-  (model: opus) exist, and `.claude/skills/build` and `.claude/skills/judge`
-  beside the other skills. Missing: say so and stop.
+- `.claude/agents/builder.md` and `.claude/agents/judge.md` exist, and
+  `.claude/skills/build` and `.claude/skills/judge` beside the other
+  skills. Missing: say so and stop.
 - The working tree: clean apart from a possible leftover `PROGRESS.md`.
   Anything else uncommitted: stop and say so.
 - The base branch, from the project's CLAUDE.md `## Conventions` section
@@ -41,7 +41,9 @@ first, in rounds, before the report reaches the person.
 - The project's workflow config (see the build skill's Conventions
   section): `.claude/workflow.yml`, or every default when it and the
   `workflow config` key are both absent. This loop reads `models`,
-  `review.evidence_findings` and `parallel.tickets` from it.
+  `review.evidence_findings` and `parallel.tickets` from it. Its
+  `models` win over the `model:` line in an agent's own file: that line
+  applies only when the agent is started outside this loop.
 
 ## Asking
 
@@ -73,10 +75,10 @@ another ticket's branch. Say the branch. The
 builder then finds itself off the base branch and stays there, as the
 build method's own branch rule says.
 
-**3. Build.** Start the `builder` agent, pinned twice over — once in its
-own frontmatter, once again in the spawn (in Claude Code: `Agent` with
-the `builder` agent type and `model:` the workflow config's
-`models.builder`, `sonnet` by default) — with the ticket's path,
+**3. Build.** Start the `builder` agent on the model the workflow
+config's `models.builder` names, `sonnet` by default (in Claude Code:
+`Agent` with the `builder` agent type and `model:` set to that value,
+which overrides the agent file's own) — with the ticket's path,
 the branch, and one instruction: follow the build method to the
 hand-back. Wait. Read what came back: the report's path, the steps
 ticked, what was not tested. This session writes no code of its own;

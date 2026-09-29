@@ -95,6 +95,9 @@ file leaves out, or a missing file, takes the default below.
 `models`:
 - `builder` — `sonnet` (default). The model that works a ticket.
 - `judge` — `opus` (default). The model that checks a builder's work.
+  Both win over the `model:` line in `.claude/agents/builder.md` and
+  `judge.md`, which applies only when an agent is started outside
+  `implement-ticket`.
 - `recheck` — `sonnet` (default). The model of the short recheck agent
   that follows an evidence-only judge round; `implement-ticket`'s own
   key, see that method.
