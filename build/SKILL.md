@@ -130,13 +130,14 @@ allowed stops the config from loading, with an error naming the key.
 The evidence, `validation/report.json` and the screenshots, is always
 written and checked; no key turns it off. When no rendered report is due
 for a ticket (`report` is `false`, or `report_scope` is `item` and the
-ticket does not empty its item's backlog), `implement-ticket` shows a
-short summary in the chat instead. The keys:
+ticket does not empty its item's backlog, as defined under "Where it
+lives, and when it is due"), `implement-ticket` shows a short summary in
+the chat instead. The keys:
 - `report` — `true` by default. `false`: no rendered report (HTML or
   PDF); the evidence is still kept.
 - `report_scope` — `ticket` (default) or `item`. `ticket`: a rendered
-  report for every ticket. `item`: one for the whole item, after its
-  last ticket.
+  report for every ticket. `item`: one for the whole item, after the
+  ticket that empties its item's backlog.
 - `report_pdf` — `false` (default). `true`: also write a PDF of each
   rendered report, `validation/agent-report.pdf` beside the HTML.
 - `video_walkthrough` — `false` (default). `true`: record the key flow
@@ -233,8 +234,11 @@ value.
 the report it feeds, and what each part must show, is "The validation
 report" below. When a rendered report is due, run `node
 .claude/skills/build/scripts/render-report.mjs <ticket-folder>` to
-produce the HTML from it; with `validation.report_pdf`, `render-pdf.mjs`
-beside it adds the PDF. Regenerate `report.json` whole after every round,
+produce the HTML from it (it prints one line and writes nothing when no
+rendered report is due); with `validation.report_pdf`, `node
+.claude/skills/build/scripts/render-pdf.mjs <ticket-folder>` adds the PDF,
+using the Playwright of the project (`--project <root>` names another
+project root). Regenerate `report.json` whole after every round,
 then re-render; the edits anyone else makes are the judge's line appended
 to `report.json`'s `rounds` and its entry in `verdict.judge`, which the
 next regeneration carries over.
@@ -331,7 +335,9 @@ The rules that run through it:
 `agent-report.html`, `agent-report.pdf`, `walkthrough.mp4` or the `.webm`
 files, and `screenshots/`. Scope `item`: the item-wide outputs sit in the
 item's root, `items/<item>/validation/`, and the ticket that empties its
-item's backlog produces them. The per-ticket evidence, `report.json` and
+item's backlog produces them. A ticket empties its item's backlog when
+no other ticket of its item is left in `backlog/` or `in-progress/`.
+The per-ticket evidence, `report.json` and
 `screenshots/`, stays in each ticket's own folder; the item report links
 it by relative path. A rendered report is not due when `validation.report`
 is `false`, or when `report_scope` is `item` and the ticket does not

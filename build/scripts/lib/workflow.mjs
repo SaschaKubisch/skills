@@ -345,3 +345,53 @@ function touchedInvariantIds(text) {
 
   return ids;
 }
+
+// Every ticket folder of an item, across backlog/, in-progress/ and done/,
+// as { folder, column } sorted by folder name (the ticket number comes
+// first in it, so this is ticket order). Used to merge an item's report.
+export function itemTicketFolders(item) {
+  const found = [];
+  for (const column of ["backlog", "in-progress", "done"]) {
+    const dir = join(item, "tickets", column);
+    if (!existsSync(dir)) continue;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) found.push({ folder: join(dir, entry.name), column });
+    }
+  }
+  return found.sort((a, b) => basename(a.folder).localeCompare(basename(b.folder)));
+}
+
+// The invariant identifiers a test's `proves` clause names, normalized:
+// a letter-number token (D1) always counts; a bare number counts next to
+// the word "invariant"/"invariants" ("invariants 6, 11"). The same rule
+// as for a step's proves clause in a ticket.
+export function clauseInvariantIds(clause) {
+  const ids = new Set();
+  const text = String(clause ?? "");
+  for (const m of text.matchAll(/\b([A-Za-z]\d+)\b/g)) ids.add(normalizeInvariantId(m[1]));
+  const word = /invariants?\s+([\d,\s]*\d)/i.exec(text);
+  if (word) for (const n of word[1].match(/\d+/g) || []) ids.add(normalizeInvariantId(n));
+  return ids;
+}
+
+// A normalized invariant id as the report shows it: "4" stays "4", "d2"
+// becomes "D2".
+export function invariantLabel(id) {
+  return /^\d+$/.test(id) ? id : id.toUpperCase();
+}
+
+// The one-line titles of the invariants a ticket lists under "## Invariants
+// this touches", as a map of normalized id to the bullet's text with its
+// number and its trailing explanation cut off ("9. Orders never go
+// negative, checked by exit condition 4." -> "Orders never go negative").
+export function invariantTitles(ticketText) {
+  const titles = new Map();
+  const lines = sectionBody(ticketText, "## Invariants this touches").split("\n");
+  for (const line of lines) {
+    const m = /^-\s*([A-Za-z]?\d+)[.:,]\s*(.*)$/.exec(line.trim());
+    if (!m) continue;
+    const title = m[2].split(/,\s+(?:checked|proved|proven|see)\b/i)[0].replace(/[.\s]+$/, "");
+    if (title) titles.set(normalizeInvariantId(m[1]), title);
+  }
+  return titles;
+}

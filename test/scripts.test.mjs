@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // test/scripts.test.mjs — exercises build/scripts/check-evidence.mjs and
-// build/scripts/render-report.mjs against the fixtures under
+// build/scripts/render-report.mjs and render-pdf.mjs against the fixtures under
 // test/fixtures/tickets/. Run by test/run.sh; exits 1 on any failure.
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, cpSync, readFileSync, existsSync, rmSync, renameSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, cpSync, readFileSync, existsSync, rmSync, renameSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
@@ -13,13 +13,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, "..");
 const checkEvidence = join(repoRoot, "build", "scripts", "check-evidence.mjs");
 const renderReport = join(repoRoot, "build", "scripts", "render-report.mjs");
+const renderPdf = join(repoRoot, "build", "scripts", "render-pdf.mjs");
 const fixturesDir = join(repoRoot, "test", "fixtures", "tickets");
 
 let fail = 0;
 
 function run(script, arg) {
   try {
-    const out = execFileSync("node", [script, arg], { encoding: "utf8" });
+    const out = execFileSync("node", [script, arg], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
     return { code: 0, out, err: "" };
   } catch (e) {
     return { code: e.status, out: e.stdout || "", err: e.stderr || "" };
@@ -185,40 +186,270 @@ function withCopy(fixture, change) {
   check(reports(err, "report-html:"), `the misplaced item-scope report should be reported; got:\n${err}`);
 }
 
-// render-report.mjs renders the passing fixture into agent-report.html,
-// from a copy so the checked-in fixture stays clean.
-{
+// ---- render-report.mjs and render-pdf.mjs ----
+
+// A copy of a fixture to render into, so the checked-in one stays clean.
+function copyFixture(fixture) {
   const tmp = mkdtempSync(join(tmpdir(), "workflow-config-render-"));
-  const ticketCopy = join(tmp, "ticket");
-  cpSync(join(fixturesDir, "passing", "ticket"), ticketCopy, { recursive: true });
+  cpSync(join(fixturesDir, fixture), tmp, { recursive: true });
+  return tmp;
+}
 
-  const { code, out } = run(renderReport, ticketCopy);
-  check(code === 0, `render-report.mjs should exit 0 on the passing fixture (got ${code})`);
-
-  const reportPath = join(ticketCopy, "validation", "agent-report.html");
-  check(existsSync(reportPath), "render-report.mjs should write validation/agent-report.html");
-  check(out.trim().endsWith("agent-report.html"), "render-report.mjs should print the report's path");
-
-  if (existsSync(reportPath)) {
-    const html = readFileSync(reportPath, "utf8");
-    check(html.includes("Sample ticket"), "the rendered report should include the report's title");
-    check(html.includes("<h2>Tests</h2>"), "the rendered report should include a Tests section");
-    check(
-      html.includes('src="screenshots/walkthrough-01-widget-1280x800.png"'),
-      "the rendered report should include a figure for each declared screenshot size",
-    );
-    check(
-      html.includes('src="screenshots/walkthrough-01-widget-390x844.png"'),
-      "the rendered report should include a figure for the phone size too",
-    );
+// True when every marker appears in the html, in the order given.
+function inOrder(html, markers) {
+  let at = -1;
+  for (const m of markers) {
+    const found = html.indexOf(m, at + 1);
+    if (found === -1) return m;
+    at = found;
   }
+  return null;
+}
 
-  rmSync(tmp, { recursive: true, force: true });
+// A ticket-scope report, from the fully switched-on fixture: the sections
+// come in the order "The validation report" gives, and the storyboard has
+// every journey step's screenshot at every size, the before screen and the
+// video with its chapters.
+{
+  const tmp = copyFixture("passing-full");
+  try {
+    const ticket = join(tmp, "ticket");
+    const { code, out } = run(renderReport, ticket);
+    check(code === 0, `render-report.mjs should exit 0 on passing-full (got ${code})`);
+    const reportPath = join(ticket, "validation", "agent-report.html");
+    check(out.trim().endsWith("agent-report.html"), "render-report.mjs should print the report's path");
+    check(existsSync(reportPath), "render-report.mjs should write validation/agent-report.html");
+    const html = existsSync(reportPath) ? readFileSync(reportPath, "utf8") : "";
+
+    const missing = inOrder(html, [
+      'id="verdict"',
+      "Ready with notes",
+      'id="tiles"',
+      'class="summary"',
+      'id="storyboard"',
+      'id="journeys"',
+      'id="changes"',
+      'class="risk high"',
+      'class="bar"',
+      'id="grid"',
+      'id="cards"',
+      'class="nt"',
+      'class="pf"',
+      'id="details"',
+      "<details",
+    ]);
+    check(missing === null, `the rendered report should hold its parts in order; stuck at ${missing}`);
+    check((html.match(/<details/g) || []).length >= 4, "the report should fold at least four details blocks");
+    check(!/<details[^>]*\bopen\b/.test(html), "every details block should start folded");
+
+    for (const size of ["1280x800", "390x844"]) {
+      for (const file of ["walkthrough-01-widget", "before-walkthrough-01-widget"]) {
+        check(
+          html.includes(`<img loading="lazy" src="screenshots/${file}-${size}.png"`),
+          `the storyboard should show ${file} at ${size}`,
+        );
+      }
+    }
+    check(html.includes("Open the page and see the widget"), "the storyboard should carry the step caption");
+    check(html.includes('class="mermaid"') && html.includes("flowchart LR"), "the journeys should be a Mermaid flowchart");
+    check(html.includes('href="#st0r0n1"'), "the journeys should link back to the storyboard steps");
+    check(html.includes('id="st0r0n1"'), "the storyboard step should carry the anchor the journey links to");
+    check(html.includes('<video controls') && html.includes('href="walkthrough.mp4#t=0"'), "the video should come with its chapter links");
+    check(html.includes("widget-reload.spec.ts") && html.includes("flaky") && html.includes("traces/widget-reload.zip"), "the grid or table should mark the flaky test and link its trace");
+    check(html.includes("no headless browser was found"), "a skipped PDF should show under Not tested");
+    check(html.includes("87.5"), "the changed-line coverage tile should show");
+    check(html.includes("@media print") && html.includes("prefers-color-scheme: dark"), "the report should style print and dark mode");
+    check(html.includes("cdn.jsdelivr.net/npm/mermaid"), "Mermaid should come from the CDN");
+    check(!/<link[^>]+rel=["']stylesheet/.test(html) && !/<script[^>]+src=/.test(html), "the report should load no stylesheet or script file");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// Text is escaped, wherever it comes from.
+{
+  const tmp = copyFixture("passing-full");
+  try {
+    const ticket = join(tmp, "ticket");
+    const reportPath = join(ticket, "validation", "report.json");
+    const report = JSON.parse(readFileSync(reportPath, "utf8"));
+    report.title = "<script>alert(1)</script>";
+    report.summary = "Sum <b>bold</b> & more.";
+    report.journeys[0].steps[0].caption = '"><img src=x onerror=alert(2)>';
+    report.not_tested = [{ what: "<i>what</i>", reason: "because </pre><script>x()</script>" }];
+    report.problems[0].problem = "a < b && c > d";
+    report.diagrams = [{ title: "T <u>", text: "flowchart LR\n  a[\"</pre><script>y()</script>\"] --> b" }];
+    writeFileSync(reportPath, JSON.stringify(report));
+    const { code } = run(renderReport, ticket);
+    check(code === 0, "render-report.mjs should render a report whose text holds markup");
+    const html = readFileSync(join(ticket, "validation", "agent-report.html"), "utf8");
+    for (const raw of ["<script>alert(1)", "<img src=x", "<b>bold</b>", "<i>what</i>", "<script>x()", "<script>y()", "<u>"]) {
+      check(!html.includes(raw), `the report should not carry the raw markup ${raw}`);
+    }
+    check(html.includes("&lt;script&gt;alert(1)&lt;/script&gt;"), "the title should be escaped");
+    check(html.includes("&quot;&gt;&lt;img src=x onerror=alert(2)&gt;"), "a caption should be escaped");
+    check(html.includes("a &lt; b &amp;&amp; c &gt; d"), "a problem card should be escaped");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// Item scope: the ticket that empties its item's backlog renders one report
+// into the item's validation folder, merging every ticket of the item.
+{
+  const tmp = copyFixture("passing-item-last");
+  try {
+    const item = join(tmp, "items", "alpha");
+    const last = join(item, "tickets", "in-progress", "0001-sample");
+    const first = join(item, "tickets", "done", "0000-first");
+    // the earlier ticket's own evidence: its report.json and screenshots
+    const lastReport = JSON.parse(readFileSync(join(last, "validation", "report.json"), "utf8"));
+    const firstReport = {
+      ...lastReport,
+      ticket: "0000-first",
+      title: "First ticket",
+      summary: "The first ticket built the page.",
+      verdict: { builder: "ready_with_notes", reasons: ["One test was retried."], judge: null },
+      journeys: [{ role: "visitor", steps: [{ n: 1, caption: "Visit the first page", screenshot: "walkthrough-01-widget", before: null }] }],
+      videos: [],
+    };
+    mkdirSync(join(first, "validation"), { recursive: true });
+    writeFileSync(join(first, "validation", "report.json"), JSON.stringify(firstReport));
+    cpSync(join(last, "validation", "screenshots"), join(first, "validation", "screenshots"), { recursive: true });
+
+    const { code, out } = run(renderReport, last);
+    check(code === 0, `render-report.mjs should exit 0 on the item's last ticket (got ${code})`);
+    const itemHtml = join(item, "validation", "agent-report.html");
+    check(out.trim() === itemHtml || out.trim().endsWith(join("items", "alpha", "validation", "agent-report.html")), "the item report's path should be printed");
+    check(!existsSync(join(last, "validation", "agent-report.html")), "an item report should not be written into the ticket's folder");
+    const html = readFileSync(itemHtml, "utf8");
+    check(html.includes("Visit the first page") && html.includes("Open the page and see the widget"), "the item report should hold both tickets' storyboards");
+    check(
+      html.includes("../tickets/done/0000-first/validation/screenshots/walkthrough-01-widget-1280x800.png") &&
+        html.includes("../tickets/in-progress/0001-sample/validation/screenshots/walkthrough-01-widget-1280x800.png"),
+      "an item report should link each ticket's screenshots by relative path",
+    );
+    check(html.indexOf("Visit the first page") < html.indexOf("Open the page and see the widget"), "the storyboards should follow the tickets' order");
+    check((html.match(/class="ticket-head"/g) || []).length === 2, "each ticket's storyboard should carry a ticket header");
+    check(html.includes('href="walkthrough.mp4#t=0"'), "the item's video should link from the item's validation folder");
+    check(html.includes("tickets/") && html.includes("2 tickets"), "the item report should say where the item's tickets live");
+    check(html.includes("Ready with notes"), "the item's verdict should be the worst of its tickets");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// Item scope, re-rendered after the move to done/: the last ticket now sits
+// in done/ and nothing is left in backlog/ or in-progress/. The report is
+// still due, and its links carry the new column folder.
+{
+  const tmp = copyFixture("passing-item-last");
+  try {
+    const item = join(tmp, "items", "alpha");
+    const moved = join(item, "tickets", "done", "0001-sample");
+    renameSync(join(item, "tickets", "in-progress", "0001-sample"), moved);
+    const { code, out } = run(renderReport, moved);
+    check(code === 0, `render-report.mjs should exit 0 on the item's last ticket in done/ (got ${code})`);
+    check(!/^No rendered report is due/.test(out), `an item report should be due for the last ticket in done/; got:\n${out}`);
+    const itemHtml = join(item, "validation", "agent-report.html");
+    check(existsSync(itemHtml), "the item report should be written into the item's validation folder");
+    const html = existsSync(itemHtml) ? readFileSync(itemHtml, "utf8") : "";
+    check(
+      html.includes("../tickets/done/0001-sample/validation/screenshots/walkthrough-01-widget-1280x800.png") &&
+        !html.includes("in-progress/0001-sample"),
+      "the re-rendered item report should link the evidence under done/",
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// Not due: item scope on a ticket that does not empty its item's backlog,
+// and the report switched off. One line, exit 0, nothing written.
+{
+  const tmp = copyFixture("passing-item-scope");
+  try {
+    const ticket = join(tmp, "items", "alpha", "tickets", "in-progress", "0001-sample");
+    const { code, out } = run(renderReport, ticket);
+    check(code === 0, `render-report.mjs should exit 0 when no report is due (got ${code})`);
+    check(/^No rendered report is due: /.test(out) && out.trim().split("\n").length === 1, `a not-due run should print one line; got:\n${out}`);
+    check(!existsSync(join(tmp, "items", "alpha", "validation")), "a not-due run should not create the item's validation folder");
+    check(!existsSync(join(ticket, "validation", "agent-report.html")), "a not-due run should not write a report");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+{
+  const tmp = copyFixture("passing");
+  try {
+    mkdirSync(join(tmp, ".claude"), { recursive: true });
+    writeFileSync(join(tmp, ".claude", "workflow.yml"), "validation:\n  report: false\n");
+    const ticket = join(tmp, "ticket");
+    const htmlPath = join(ticket, "validation", "agent-report.html");
+    writeFileSync(htmlPath, "untouched");
+    const { code, out } = run(renderReport, ticket);
+    check(code === 0 && /^No rendered report is due: validation\.report is false/.test(out), `report: false should print the not-due line; got ${code}: ${out}`);
+    check(readFileSync(htmlPath, "utf8") === "untouched", "report: false should write no report");
+    const pdf = run(renderPdf, ticket);
+    check(pdf.code === 0 && /^No PDF is due/.test(pdf.out), `report: false should leave no PDF due; got ${pdf.code}: ${pdf.out}`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// render-pdf.mjs: nothing to do with report_pdf false or no report due; with
+// no Playwright in the project it skips, records why, and shows it.
+{
+  const tmp = copyFixture("passing");
+  try {
+    const ticket = join(tmp, "ticket");
+    const before = readFileSync(join(ticket, "validation", "report.json"), "utf8");
+    const { code, out } = run(renderPdf, ticket);
+    check(code === 0 && /^No PDF is due: validation\.report_pdf is false/.test(out), `report_pdf false should print one line and exit 0; got ${code}: ${out}`);
+    check(readFileSync(join(ticket, "validation", "report.json"), "utf8") === before, "render-pdf.mjs should leave report.json alone with report_pdf false");
+    check(!existsSync(join(ticket, "validation", "agent-report.pdf")), "report_pdf false should write no PDF");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+{
+  const tmp = copyFixture("passing-item-scope");
+  try {
+    const ticket = join(tmp, "items", "alpha", "tickets", "in-progress", "0001-sample");
+    const { code, out } = run(renderPdf, ticket);
+    check(code === 0 && /^No PDF is due/.test(out), `no PDF should be due when the item's report is not; got ${code}: ${out}`);
+    check(!existsSync(join(tmp, "items", "alpha", "validation")), "a not-due PDF run should write nothing");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+{
+  const tmp = copyFixture("passing-full");
+  try {
+    const ticket = join(tmp, "ticket");
+    const reportPath = join(ticket, "validation", "report.json");
+    const report = JSON.parse(readFileSync(reportPath, "utf8"));
+    delete report.pdf;
+    writeFileSync(reportPath, JSON.stringify(report));
+    // the project (this copy) has no node_modules, so Playwright cannot be found
+    const { code, out } = run(renderPdf, ticket);
+    check(code === 0, `render-pdf.mjs should exit 0 without Playwright (got ${code})`);
+    check(/^PDF skipped: /.test(out), `render-pdf.mjs should print the reason; got:\n${out}`);
+    const after = JSON.parse(readFileSync(reportPath, "utf8"));
+    check(after.pdf && typeof after.pdf.skipped === "string" && after.pdf.skipped.length > 0, "report.json's pdf.skipped should hold the reason");
+    check(!existsSync(join(ticket, "validation", "agent-report.pdf")), "a skipped PDF should write no file");
+    const html = readFileSync(join(ticket, "validation", "agent-report.html"), "utf8");
+    check(html.includes(after.pdf.skipped.replace(/&/g, "&amp;")), "the re-rendered report should show the skip reason");
+    const again = run(checkEvidence, ticket);
+    check(again.code === 0, `check-evidence.mjs should accept the skipped PDF; got:\n${again.err}`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
 }
 
 if (fail === 0) {
   console.log(
-    "PASS: check-evidence.mjs passes the passing fixtures and fails each fixture on its own rule only, and puts an item's outputs in the item's root; render-report.mjs renders the passing fixture's report.",
+    "PASS: check-evidence.mjs passes the passing fixtures and fails each fixture on its own rule only, and puts an item's outputs in the item's root; render-report.mjs renders the visual report in its order, escapes its text, merges an item's tickets and says when none is due; render-pdf.mjs does nothing when no PDF is due and records a skip without Playwright.",
   );
 }
 
