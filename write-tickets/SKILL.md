@@ -51,7 +51,8 @@ Detect, do not assume:
 
 - Code, or an empty folder? The build, typecheck, lint and test commands —
   from `package.json`, a `Makefile`, CI config? Run them: green or red? A
-  database? A UI? Which items in the spec are already true in the code?
+  database? A UI, and a design system under it (tokens, base components)?
+  Which items in the spec are already true in the code?
 - Existing tickets: every `items/*/tickets/*/` folder and the highest
   number across all of them.
 - The branch checked out, and the base branch from the project's
@@ -78,6 +79,12 @@ condition below depends on it.
 the real change easy — a shared type, a module boundary, a column. "Make
 the change easy, then make the easy change." Any such change is the first
 ticket, and it blocks the rest. On an empty folder there is none.
+
+The same rule applies to design. When the spec has a user interface and
+the repository has no design system yet, the first UI ticket builds it:
+the tokens (colour, type, spacing, radius, motion), the base components,
+and the accessibility, layout and states checks the design invariants
+need. It blocks every other UI ticket.
 
 **2. Cut vertical slices.**
 
@@ -162,6 +169,10 @@ line, and ask about it in step 6.
   nothing can make the checks pass until step four, the order is wrong,
   not the check.
 - **Prefactoring next**, if this ticket is the one that carries it.
+- **A ticket that builds or changes a screen** has this as its first work
+  step after the checks-pass step: "write the design brief for this
+  ticket's screens (purpose, device, states)". Its later steps say they
+  are worked with the design method the spec names under Design.
 - **Every step is one iteration's work**: a narrow slice through every
   layer, shown working on its own, done and verified inside one fresh
   context window. Two iterations' worth is two steps.
@@ -181,6 +192,8 @@ line, and ask about it in step 6.
   how instead of what — except a prototype snippet that states a decision
   more precisely than prose can, trimmed to the decision.
 - Each step names what it proves: `— proves: <criterion or invariant>`.
+  A design invariant is named by its id and spec: `— proves: D2 of
+  specs/system.md`.
 
 **5. Write exit conditions as commands.** Every exit condition is a
 runnable command that exits non-zero when it is not satisfied. Prose is
@@ -197,11 +210,11 @@ npx playwright test qr-flow
 
 Each line begins with the command that decides it. Cheapest first: they
 are a gate chain, and the expensive ones run only on work that cleared the
-cheap ones. Every invariant this slice touches appears here, or under
-`NOT CHECKED` with the reason — an unchecked invariant is a decision,
-but only once it is written down. What only a person can judge
-is listed under `HUMAN CHECK` with what to look at; never dress a human
-check up as a command.
+cheap ones. Every invariant this slice touches, design invariants
+included, appears here, or under `NOT CHECKED` with the reason — an
+unchecked invariant is a decision, but only once it is written down. What
+only a person can judge is listed under `HUMAN CHECK` with what to look
+at; never dress a human check up as a command.
 
 **6. Present the breakdown, then ask.** A numbered list. Per ticket:
 title; AFK or HITL; blocked by (or "nothing — can start now"); what it
@@ -221,6 +234,9 @@ breakdown, for the user to check the plan against before answering:
 - Should any be merged or split?
 - Is the first slice really the simplest end-to-end path?
 - Does the first step of each ticket really make the checks pass?
+- Does every ticket that builds a screen start, after the checks, with
+  its design brief, and does the first UI ticket build the design system
+  where there is none?
 - Is there anything in the spec with no step that traces to it, and any
   step that traces to nothing?
 - Does the proposed Conventions section look right, where one was proposed?
@@ -347,13 +363,19 @@ MAY NOT     <the negative constraint — often an invariant in one line>
 ## Invariants this touches
 
 - <invariant>, checked by <which exit condition>
+- D<n> <design invariant>, checked by <which exit condition>
 
 ## Steps
 
 1. <the checks pass: walking skeleton, or the baseline confirmed or
    repaired> — proves: <the commands run green>
-2. <one iteration's slice> — proves: <criterion or invariant>
-3. ...
+2. <only when the ticket builds or changes a screen: write the design
+   brief for this ticket's screens (purpose, device, states)> — proves:
+   <the brief names purpose, device and states for every screen>
+3. <one iteration's slice, worked with the design method the spec names,
+   where it is a screen> — proves: <criterion or invariant, or `D<n> of
+   <spec path>`>
+4. ...
 N. <the end-to-end test> — proves: <the flow the slice delivers, end
    to end>
 

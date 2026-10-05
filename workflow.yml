@@ -14,3 +14,15 @@ review:
 parallel:
   tickets: 1                  # >1 only with a Conventions `isolated test run` line
   e2e_workers: 1              # >1 needs per-worker databases and ports
+
+validation:                   # tunes the validation report the builder writes
+  report: true                  # false: no rendered report (HTML/PDF); the evidence, report.json and screenshots, is still kept
+  report_scope: ticket          # ticket | item — a rendered report for every ticket, or one for the whole item after its last ticket
+  report_pdf: false             # true: also write a PDF of each rendered report
+  video_walkthrough: false      # true: record the key flow as a video with chapters, embedded in the report
+  video_scope: ticket           # ticket | item — every ticket's report, or only the ticket that empties its item's backlog
+  video_commit: true            # false: keep videos git-ignored instead of committed
+  video_max_mb: 10              # a larger video is re-encoded or shortened; check-evidence refuses it if still over
+  before_after: false           # true: also capture the walkthrough screens on the base branch, shown side by side
+  traces: true                  # link failed and retried tests to their Playwright trace; mark flaky tests
+  changed_line_coverage: false  # true: a tile with test coverage of only this ticket's changed lines; needs the project's coverage tool

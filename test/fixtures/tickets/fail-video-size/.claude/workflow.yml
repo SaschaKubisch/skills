@@ -1,0 +1,3 @@
+validation:
+  video_walkthrough: true
+  video_max_mb: 1

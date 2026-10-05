@@ -15,24 +15,34 @@ from a plain, interactive Claude Code session.
 - **specify** — interviews the user about a brief, a feature or a whole
   product, one question at a time, until nothing is left silently
   assumed; writes the project's vocabulary, its hard decisions, and an
-  interview record of everything else that settled.
+  interview record of everything else that settled. When the thing has a
+  user interface, the design is a required branch of the interview, and
+  the record gains a Design section and design invariants (D1, D2, ...).
 - **write-spec** — turns an interview record into a locked spec: the
   word-for-word statement of what must be true, with a finish line of
-  runnable commands.
+  runnable commands. It carries a Design section: the design decisions,
+  the design invariants and the method that builds the screens.
 - **write-tickets** — cuts a spec into tickets: vertical slices sized to
-  one run, each with its steps and its exit conditions. Names no
-  implementing method; any can work the tickets.
+  one run, each with its steps and its exit conditions. Each ticket that
+  builds a screen starts with a design brief, and the first UI ticket
+  builds the design system where there is none. Names no implementing
+  method; any can work the tickets.
 - **build** — the method for working one ticket to done: a branch, one
   test per step, validation from cheapest check to end to end, and a
-  self-contained HTML report, checked against the ticket by a script
-  before hand-back.
+  visual validation report for the engineer who accepts the ticket: the
+  verdict first, then the walkthrough storyboard, the journeys, what
+  changed with a risk tier per module, and the traceability grid of
+  invariants against tests. A script checks it against the ticket before
+  hand-back.
 - **judge** — the method for checking a built ticket: runs every check
   again, reads the diff for softened tests, reads every screenshot
-  against its claim, and writes a verdict. Fixes nothing itself.
+  against its claim, reads the report's storyboard and video frames
+  against the flow, and writes a verdict. Fixes nothing itself.
 - **implement-ticket** — claims one ticket, builds it with the **builder**
   agent and, with `--judge`, checks it with the **judge** agent in
-  rounds; opens the validation report and lets the person accept it —
-  merged and marked done — request changes, or stop.
+  rounds; opens the validation report (or, when none is due, prints a
+  summary in the chat) and lets the person accept it — merged and marked
+  done — request changes, or stop.
 
 ## The flow
 
@@ -45,12 +55,14 @@ The planning skills know nothing of the building skills. `specify` and
 `write-spec` each close by asking the person one question and, on yes,
 read the next skill's `SKILL.md` at its installed path and follow it:
 `specify` settles what is meant and writes an interview record, then
-asks whether to write the spec now. `write-spec` turns the record into a
-locked spec, then asks whether to cut it into tickets now.
-`write-tickets` cuts the spec into tickets — small enough for one run,
-each with its own exit conditions — names the first one, and stops. Any
-of the three also works typed on its own — `/specify`, `/write-spec`,
-`/write-tickets` — outside the chain.
+asks whether to write the spec now. When the thing has a user interface,
+that includes its design and its design invariants. `write-spec` turns
+the record into a locked spec, with a Design section, then asks whether
+to cut it into tickets now. `write-tickets` cuts the spec into tickets —
+small enough for one run, each with its own exit conditions, and each
+screen ticket starting from a design brief — names the first one, and
+stops. Any of the three also works typed on its own — `/specify`,
+`/write-spec`, `/write-tickets` — outside the chain.
 
 The person then starts the building side. `/implement-ticket <slug>
 [--judge]` works one ticket: it claims it
@@ -68,8 +80,10 @@ flow; they are the methods `implement-ticket`'s two agents follow. A person can
 also type `/build` or `/judge` directly to work or check a ticket by
 hand, outside the loop.
 
-`implement-ticket` opens the validation report and asks the person to accept
-it: accepting merges the ticket's branch into the base branch with
+`implement-ticket` opens the validation report, prints its verdict line
+and asks the person to accept it; when the config says no rendered report
+is due, it prints a summary in the chat instead and asks the same.
+Accepting merges the ticket's branch into the base branch with
 `--no-ff`, moves the ticket's folder to `done/`, and offers the next
 ticket on the frontier. The person can instead ask for changes — another
 builder round, and another judge round with `--judge` — or stop without
@@ -157,14 +171,44 @@ later tickets do not detect it again.
 ## Workflow config
 
 `.claude/workflow.yml` tunes how `build`, `judge` and `implement-ticket`
-work in a project, its keys grouped under `models:`, `review:` and
-`parallel:` — which model each agent runs on, evidence checking, what
-follows a judge round whose findings are all evidence, sharing a
-recorded whole-suite result, working tickets in parallel, and the
-end-to-end worker count. `install.sh` copies a starting file, never over
+work in a project, its keys grouped under `models:`, `review:`,
+`parallel:` and `validation:` — which model each agent runs on, evidence
+checking, what follows a judge round whose findings are all evidence,
+sharing a recorded whole-suite result, working tickets in parallel, the
+end-to-end worker count, and the validation report. `install.sh` copies a starting file, never over
 a project's own; every group and key it leaves out takes its default.
 See `build/SKILL.md`'s "The workflow config" section for every key, its
 default, and what it changes.
+
+### The validation group
+
+`validation:` tunes the validation report. Its evidence, `report.json`
+and the screenshots, is always written and checked. The keys:
+
+- `report` (`true`) — `false`: no rendered report; `implement-ticket`
+  prints a chat summary instead.
+- `report_scope` (`ticket`) — `ticket`: a report for every ticket.
+  `item`: one for the whole item, after its last ticket.
+- `report_pdf` (`false`) — `true`: also a PDF beside each HTML report.
+- `video_walkthrough` (`false`) — `true`: record the key flow as a video
+  with chapters, embedded in the report.
+- `video_scope` (`ticket`) — `ticket`: every ticket's report gets the
+  video. `item`: only the ticket that empties its item's backlog (no other
+  ticket of the item left in `backlog/` or `in-progress/`).
+- `video_commit` (`true`) — `false`: keep videos git-ignored.
+- `video_max_mb` (`10`) — a larger video is re-encoded or shortened; the
+  evidence check refuses it if it is still over.
+- `before_after` (`false`) — `true`: the walkthrough screens are also
+  captured on the base branch and shown side by side.
+- `traces` (`true`) — failed and retried tests link to their Playwright
+  trace; flaky tests are marked.
+- `changed_line_coverage` (`false`) — `true`: a tile with the coverage of
+  this ticket's changed lines.
+
+At ticket scope the outputs sit in the ticket's own `validation/` folder.
+At item scope they sit in `items/<item>/validation/`, produced by the
+ticket that empties its item's backlog; each ticket's `report.json` and
+screenshots stay in its own folder.
 
 ## Licence
 

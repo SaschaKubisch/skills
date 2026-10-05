@@ -18,7 +18,9 @@ description: >-
   settled thing as diagrams at the close, in the record, for the user to
   correct. Offered afterward, drafts headings and After lines into
   roadmap.md, only once the user says yes, and nothing under goals/ or
-  items/. What the user cannot settle is recorded as an open decision,
+  items/. When the thing has a user interface, its design is a required
+  branch of the interview and its design invariants are asked for.
+  What the user cannot settle is recorded as an open decision,
   in their words. Writes no spec — write-spec does that next, from the
   record. Type it; the model never starts it on its own.
 disable-model-invocation: true
@@ -124,9 +126,13 @@ Detect, do not assume. Read what is already here:
   under `items/<slug>/context/`? Its settled decisions stand unless the
   user reopens them; its open decisions are the first questions of this
   interview.
+- A user interface? A screen, a page, an app a person touches. Read it
+  from the brief, the code and the record. With none, the record carries
+  a settled line saying there is no user interface, so the absence is a
+  decision, not a gap.
 
 Say what you found before the first question, and which entry you are
-running and why.
+running and why. Say too whether the thing has a user interface.
 
 ## Asking
 
@@ -156,8 +162,8 @@ and ask the next question. A question whose answer depends on another
 still open waits until that answer is in; asking it now forces a guess,
 and a guessed answer is worse than an unasked question. Order the
 frontier from the root of the tree outwards: vocabulary and entities
-first, then lifecycles, then screens, then technology, then environment
-facts. The interview is done when the frontier is empty.
+first, then lifecycles, then screens, then the design, then technology,
+then environment facts. The interview is done when the frontier is empty.
 
 Before the first question, say how many questions the frontier holds
 right now, so the user knows the shape of the interview. Every question
@@ -173,6 +179,25 @@ line, under the goal record's own heading for them (see the record
 format below), and move on. An item earns its own interview later,
 against its own brief — that is the item interview's job, not this one.
 
+**With a user interface, the tree has a design branch, and it is
+required.** It sits after screens and before technology. It covers:
+
+- which device each role uses;
+- the look and feel;
+- brand assets: name, logo, colours, type — and if there are none,
+  whether the design may propose them;
+- navigation, per role;
+- the interaction pattern of each main flow;
+- loading, empty, error and offline states;
+- the accessibility bar;
+- which design skill or method builds the screens. Recommend
+  `frontend-design` when the session lists it.
+
+The branch is the frontier like everything else: one question at a time,
+no question a source already settles, nothing assumed. It is not a fixed
+template. The only thing fixed is that each point above is covered, by
+a settled line or an open decision.
+
 The form always offers "Other" for free text; a free-text answer is the
 user's decision like any other. A question with no sensible options — a
 name, a URL, an address, a list of sentences — is asked in plain text
@@ -184,6 +209,14 @@ written so a test could check it."** Group the answers as the user groups
 them and number them. These are the invariants; `write-spec` copies them
 verbatim and the loop's checks are written against them. Skip it only
 when a source document already carried them.
+
+With a user interface, a second question is required, asked in plain text
+once the design branch is settled: **"What must always be true of the
+interface? One sentence each, written so a test could check it."** Number
+the answers D1, D2, ... in the order given, grouped as the user groups
+them. These are the design invariants; `write-spec` copies them verbatim
+and the loop's checks are written against them. Skip it only when a
+source document already carried them.
 
 **2. Find facts yourself.** When a question needs a fact from the
 environment — what the code does today, what a file contains, what a
@@ -235,16 +268,16 @@ out of a session, and they land in three places:
    - The item interview: `items/<slug>/context/<slug>.md`, named after
      the item.
    - The goal interview: `goals/<ID>.md`, in the goal record format
-     below — its candidate items included, its Settled, Invariants and
-     Diagrams the same shape as any other record. Also rewrite the
-     roadmap heading's own paragraph and `After:` line in `roadmap.md` if
-     the interview changed either, in place — the heading and its own
-     text are not a separate ask; they are this record's own summary,
-     kept in sync with it. This is the one case where the goal interview
-     writes into `roadmap.md` on its own, without a further yes: the
-     heading already exists, proposed and accepted earlier (by the
-     roadmap draft, below, or by the user directly) — the interview only
-     sharpens it.
+     below — its candidate items included, its Settled, Design,
+     Invariants, Design invariants and Diagrams the same shape as any
+     other record. Also rewrite the roadmap heading's own paragraph and
+     `After:` line in `roadmap.md` if the interview changed either, in
+     place — the heading and its own text are not a separate ask; they
+     are this record's own summary, kept in sync with it. This is the one
+     case where the goal interview writes into `roadmap.md` on its own,
+     without a further yes: the heading already exists, proposed and
+     accepted earlier (by the roadmap draft, below, or by the user
+     directly) — the interview only sharpens it.
 
    Any of these replaces an earlier record for the same topic, item or
    goal; it was read at the start.
@@ -254,8 +287,10 @@ out of a session, and they land in three places:
    in one look instead of a page. Five kinds, each only when the record
    has the lines for it: the system in its surroundings (who and what
    talks to it), the entities and their relations, one user journey per
-   role, one sequence per main flow, the lifecycle of the main entity.
-   Every box and arrow traces to a numbered settled line or invariant;
+   role (drawn from the design lines when there is a user interface),
+   one sequence per main flow, the lifecycle of the main entity.
+   Every box and arrow traces to a numbered settled line, design line or
+   invariant;
    the sentences under the diagram name the numbers. No modules, layers,
    tables or folders: structure is decided by the code, not here. The one
    exception is a seam or a module an invariant names, drawn as the
@@ -334,6 +369,9 @@ out of a session, and they land in three places:
   becomes an open decision in the item's record, in the user's words.
   An item adds to the system's spec; it never changes it. Changing
   `specs/system.md` is a person's edit.
+- The thing has a user interface and a point of the design branch is
+  neither settled nor an open decision: the interview is not done. Ask
+  it.
 - A feature or capability comes up mid-goal-interview: note it as a
   candidate item and continue the goal's own frontier. Do not open an
   item interview for it in the same session.
@@ -438,10 +476,24 @@ record of what the user settled and what they left open, in their words.
 1. <one decision, in the user's words — not paraphrased into requirements>
 2. ...
 
+## Design
+
+<with a user interface: the settled design decisions, in the user's
+words, one per line, numbered on from the last line under Settled. With
+none, the one line `No user interface.`>
+
 ## Invariants
 
 <numbered, grouped as the user grouped them, one sentence each, verbatim.
 If a source document carried them, copied from it as they stand>
+
+## Design invariants
+
+<with a user interface: numbered D1, D2, ... in the order given, grouped
+as the user grouped them, one sentence each, verbatim. If a source
+document carried them, copied from it as they stand. `None settled.` if
+there are none — never delete the heading. Left out only when there is no
+user interface, where the Design section says so>
 
 ## Diagrams
 
@@ -468,9 +520,10 @@ or invariants each part traces to, by number>
 - docs/adr/<NNNN-slug>.md: <title> (or "none")
 ```
 
-Every line under Settled and Invariants is something the user said or
-confirmed, numbered in the order it settled. Nothing there is inferred.
-The record does not restate the glossary or the ADRs; it points at them.
+Every line under Settled, Design, Invariants and Design invariants is
+something the user said or confirmed, numbered in the order it settled.
+Nothing there is inferred. The record does not restate the glossary or
+the ADRs; it points at them.
 
 The item interview writes this same shape to `items/<slug>/context/<slug>.md`,
 titled `# <slug> — interview record`, its Sources including
@@ -511,11 +564,24 @@ Written by `specify` on <date>. Read by `write-spec`.
 1. <one decision, in the user's words>
 2. ...
 
+## Design
+
+<with a user interface: the settled design decisions, in the user's
+words, one per line, numbered on from the last line under Settled. With
+none, the one line `No user interface.`>
+
 ## Invariants
 
 <copied as they stand from the source that carried them, numbered and
 grouped as there, or confirmed by the user in this interview; `None
 settled.` if there are none — never delete the heading>
+
+## Design invariants
+
+<with a user interface: D1, D2, ... copied as they stand from the source
+that carried them, or confirmed by the user in this interview; `None
+settled.` if there are none. Left out only when there is no user
+interface, where the Design section says so>
 
 ## Candidate items
 

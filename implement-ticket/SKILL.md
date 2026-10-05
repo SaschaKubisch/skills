@@ -1,6 +1,6 @@
 ---
 name: implement-ticket
-description: The loop for one ticket — `<slug> [--judge]`, typed by a person. Claims it, applying the ready gate as it moves the ticket from backlog to in-progress; creates or switches to its branch; starts the builder agent (the build method, on the model the project's workflow config names, sonnet by default) and, only with --judge, the judge agent (the judge method, opus by default) afterward — while the judge requests changes the builder works a review round on the findings, then the judge again, no round cap but a question after each judge round from the third on that still has findings. Opens the validation report, then asks the person to accept it (merge --no-ff, move the ticket to done, offer the next frontier ticket), request changes (another builder round), or stop without accepting.
+description: The loop for one ticket — `<slug> [--judge]`, typed by a person. Claims it, applying the ready gate as it moves the ticket from backlog to in-progress; creates or switches to its branch; starts the builder agent (the build method, on the model the project's workflow config names, sonnet by default) and, only with --judge, the judge agent (the judge method, opus by default) afterward — while the judge requests changes the builder works a review round on the findings, then the judge again, no round cap but a question after each judge round from the third on that still has findings. Opens the validation report, or prints a summary in the chat when none is due, then asks the person to accept it (merge --no-ff, move the ticket to done, offer the next frontier ticket), request changes (another builder round), or stop without accepting.
 disable-model-invocation: true
 ---
 
@@ -41,7 +41,8 @@ first, in rounds, before the report reaches the person.
 - The project's workflow config (see the build skill's Conventions
   section): `.claude/workflow.yml`, or every default when it and the
   `workflow config` key are both absent. This loop reads `models`,
-  `review.evidence_findings` and `parallel.tickets` from it. Its
+  `review.evidence_findings`, `parallel.tickets`, `validation.report`,
+  `validation.report_scope` and `validation.report_pdf` from it. Its
   `models` win over the `model:` line in an agent's own file: that line
   applies only when the agent is started outside this loop.
 
@@ -107,22 +108,49 @@ me the report and let me decide" / "Stop here". The last two both go to
 step 5 and stop the judge loop there, for the person to decide from the
 report.
 
-**5. Hand back.** Print the report's path —
-`items/<item>/tickets/in-progress/<slug>/validation/agent-report.html`
-— and a summary of at most five lines: the steps ticked, what was not
-tested, anything the loop stopped on, and, with `--judge`, the judge's
-result. Open it:
+**5. Hand back.** Read the workflow config's `validation` group. A
+rendered report is due for this ticket unless `report` is `false`, or
+`report_scope` is `item` and the ticket does not empty its item's
+backlog (no other ticket of its item is left in `backlog/` or
+`in-progress/`).
+
+Rendered report due: print the report's path —
+`items/<item>/tickets/in-progress/<slug>/validation/agent-report.html`,
+or, with `report_scope: item` and this ticket emptying the backlog,
+`items/<item>/validation/agent-report.html` — and a summary of at most
+five lines: the steps ticked, what was not tested, anything the loop
+stopped on, and, with `--judge`, the judge's result. Print the verdict
+line before the accept question: the builder's verdict with its reasons
+from `report.json`, and with `--judge` the judge's `verdict.judge` line.
+Open the report:
 
 ```bash
+# p: the report that is due, the ticket's own, or the item's
 p="items/<item>/tickets/in-progress/<slug>/validation/agent-report.html"
-case "$(uname -s)" in
-  Darwin) open "$p" ;;
-  *) xdg-open "$p" >/dev/null 2>&1 || true ;;
-esac
+# with report_scope item and this ticket emptying the backlog:
+# p="items/<item>/validation/agent-report.html"
+open_file() {
+  case "$(uname -s)" in
+    Darwin) open "$1" ;;
+    *) xdg-open "$1" >/dev/null 2>&1 || true ;;
+  esac
+}
+open_file "$p"
+# report_pdf true and the PDF beside the HTML
+pdf="${p%.html}.pdf"
+if [ -f "$pdf" ]; then open_file "$pdf"; fi
 echo "$p"
 ```
 
-No bare `open` on Linux — it is not the command there.
+No bare `open` on Linux — it is not the command there. Set `p` to the
+report that is due, as above; run the PDF lines only when `report_pdf`
+is `true`.
+
+No rendered report due: open nothing. Print a summary instead, read from
+`validation/report.json`: the verdict, the builder's and with `--judge`
+the judge's, with its reasons; tests passed and failed; what was not
+tested; the problems fixed; and the path of the `validation/screenshots/`
+folder. Then the same accept question.
 
 **6. Accept.** Ask (see Asking): header "Ticket NNNN" (the ticket's own
 number), question "Accept NNNN: merge it and mark it done?", options:
@@ -150,7 +178,16 @@ number), question "Accept NNNN: merge it and mark it done?", options:
    `in-progress/`.
 3. `git mv items/<item>/tickets/in-progress/<slug>
    items/<item>/tickets/done/<slug>`, commit `Done: <slug>`.
-4. `rm -f PROGRESS.md` — a leftover would mislead the next builder.
+4. With `report_scope: item` and a report rendered for this ticket: the
+   item report links each ticket's evidence by a path that includes the
+   ticket's column folder, so the links break once the ticket leaves
+   `in-progress/`. Re-render it from the ticket's new place, `node
+   .claude/skills/build/scripts/render-report.mjs
+   items/<item>/tickets/done/<slug>` (and `render-pdf.mjs` the same way
+   when `report_pdf` is `true`), then `git add items/<item>/validation`
+   and `git commit --amend --no-edit`, so the re-rendered files travel
+   with the move.
+5. `rm -f PROGRESS.md` — a leftover would mislead the next builder.
 
 Keep the branch; deleting it is the person's call, not this skill's.
 

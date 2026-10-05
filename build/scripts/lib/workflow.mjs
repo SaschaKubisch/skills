@@ -1,8 +1,8 @@
 // lib/workflow.mjs — shared helpers for the workflow config scripts.
 // Node ESM, no dependencies.
 
-import { readFileSync, existsSync } from "node:fs";
-import { join, dirname, resolve } from "node:path";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { join, dirname, basename, resolve } from "node:path";
 
 // The defaults from the shipped workflow.yml. A project's file only needs
 // to name the groups and keys it changes; every other key takes the
@@ -11,6 +11,18 @@ export const defaultConfig = {
   models: { builder: "sonnet", judge: "opus", recheck: "sonnet" },
   review: { evidence: "script", evidence_findings: "recheck", reuse_suite_run: true },
   parallel: { tickets: 1, e2e_workers: 1 },
+  validation: {
+    report: true,
+    report_scope: "ticket",
+    report_pdf: false,
+    video_walkthrough: false,
+    video_scope: "ticket",
+    video_commit: true,
+    video_max_mb: 10,
+    before_after: false,
+    traces: true,
+    changed_line_coverage: false,
+  },
 };
 
 // Reads the grouped YAML this project's workflow.yml uses: comments after
@@ -96,11 +108,54 @@ export function findProjectRoot(startPath) {
   }
 }
 
+// Checks the `validation` group's values and throws an Error naming the
+// key and the values it allows when one is wrong: the on/off keys must be
+// true or false, `report_scope` and `video_scope` must be `ticket` or
+// `item`, `video_max_mb` must be a positive whole number. Returns the config unchanged when
+// every value is valid, so a valid file behaves as before.
+export function validate(config) {
+  const group = config.validation;
+  if (typeof group !== "object" || group === null) {
+    throw new Error(
+      `workflow config: "validation" must be a group of keys, not ${JSON.stringify(group)}`,
+    );
+  }
+  for (const key of [
+    "report",
+    "report_pdf",
+    "video_walkthrough",
+    "video_commit",
+    "before_after",
+    "traces",
+    "changed_line_coverage",
+  ]) {
+    if (typeof group[key] !== "boolean") {
+      throw new Error(
+        `workflow config: validation.${key} must be true or false; got ${JSON.stringify(group[key])}`,
+      );
+    }
+  }
+  for (const key of ["report_scope", "video_scope"]) {
+    if (group[key] !== "ticket" && group[key] !== "item") {
+      throw new Error(
+        `workflow config: validation.${key} must be ticket or item; got ${JSON.stringify(group[key])}`,
+      );
+    }
+  }
+  if (!Number.isInteger(group.video_max_mb) || group.video_max_mb <= 0) {
+    throw new Error(
+      `workflow config: validation.video_max_mb must be a positive whole number; got ${JSON.stringify(group.video_max_mb)}`,
+    );
+  }
+  return config;
+}
+
 // Loads the project's workflow config: every default, overridden one
 // level deep by whatever .claude/workflow.yml under the project root
 // names. A group the project file sets (e.g. `review:`) keeps every key
 // it does not mention at its default; a missing file is not an error —
-// it means every default applies.
+// it means every default applies. Throws, naming the key, when a
+// `validation` value is not one of the allowed values (see validate).
 export function loadConfig(projectRoot) {
   const path = join(projectRoot, ".claude", "workflow.yml");
   const config = {};
@@ -122,7 +177,63 @@ export function loadConfig(projectRoot) {
       }
     }
   }
-  return config;
+  return validate(config);
+}
+
+// The item a ticket belongs to: its folder is
+// `items/<item>/tickets/<column>/<slug>`, <column> one of backlog,
+// in-progress, done. Returns the item's folder, or null for a ticket
+// folder that sits anywhere else (it belongs to no item).
+export function itemFolder(ticketFolder) {
+  const column = dirname(resolve(ticketFolder));
+  const tickets = dirname(column);
+  if (
+    !["backlog", "in-progress", "done"].includes(basename(column)) ||
+    basename(tickets) !== "tickets"
+  ) {
+    return null;
+  }
+  return dirname(tickets);
+}
+
+// Whether this ticket is the one that empties its item's backlog: no other
+// ticket of its item sits in `backlog/` or `in-progress/`. A ticket that
+// belongs to no item has no other ticket and counts as the last one.
+export function emptiesItemBacklog(ticketFolder) {
+  const item = itemFolder(ticketFolder);
+  if (!item) return true;
+  for (const open of ["backlog", "in-progress"]) {
+    const dir = join(item, "tickets", open);
+    if (!existsSync(dir)) continue;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory() && entry.name !== basename(resolve(ticketFolder))) return false;
+    }
+  }
+  return true;
+}
+
+// Whether a report or video whose scope key is `scope` ("ticket" or
+// "item", `validation.report_scope` or `validation.video_scope`) is due
+// for this ticket: always for `ticket`, only for the ticket that empties
+// its item's backlog for `item`.
+export function inScope(scope, ticketFolder) {
+  return scope === "ticket" || emptiesItemBacklog(ticketFolder);
+}
+
+// Where the rendered report, its PDF and the video live for a scope:
+// scope `ticket` in the ticket's own `validation/`; scope `item` in the
+// item's root `validation/`, `items/<item>/validation/`. A ticket that
+// belongs to no item keeps everything in its own `validation/`.
+export function outputDir(scope, ticketFolder) {
+  const item = itemFolder(ticketFolder);
+  return scope === "item" && item ? join(item, "validation") : join(ticketFolder, "validation");
+}
+
+// The other place the same outputs could have been put by mistake, or
+// null when the ticket belongs to no item and there is only one place.
+export function otherOutputDir(scope, ticketFolder) {
+  if (!itemFolder(ticketFolder)) return null;
+  return outputDir(scope === "item" ? "ticket" : "item", ticketFolder);
 }
 
 // Reads the project's `## Conventions` section from CLAUDE.md (or
@@ -233,4 +344,54 @@ function touchedInvariantIds(text) {
   }
 
   return ids;
+}
+
+// Every ticket folder of an item, across backlog/, in-progress/ and done/,
+// as { folder, column } sorted by folder name (the ticket number comes
+// first in it, so this is ticket order). Used to merge an item's report.
+export function itemTicketFolders(item) {
+  const found = [];
+  for (const column of ["backlog", "in-progress", "done"]) {
+    const dir = join(item, "tickets", column);
+    if (!existsSync(dir)) continue;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) found.push({ folder: join(dir, entry.name), column });
+    }
+  }
+  return found.sort((a, b) => basename(a.folder).localeCompare(basename(b.folder)));
+}
+
+// The invariant identifiers a test's `proves` clause names, normalized:
+// a letter-number token (D1) always counts; a bare number counts next to
+// the word "invariant"/"invariants" ("invariants 6, 11"). The same rule
+// as for a step's proves clause in a ticket.
+export function clauseInvariantIds(clause) {
+  const ids = new Set();
+  const text = String(clause ?? "");
+  for (const m of text.matchAll(/\b([A-Za-z]\d+)\b/g)) ids.add(normalizeInvariantId(m[1]));
+  const word = /invariants?\s+([\d,\s]*\d)/i.exec(text);
+  if (word) for (const n of word[1].match(/\d+/g) || []) ids.add(normalizeInvariantId(n));
+  return ids;
+}
+
+// A normalized invariant id as the report shows it: "4" stays "4", "d2"
+// becomes "D2".
+export function invariantLabel(id) {
+  return /^\d+$/.test(id) ? id : id.toUpperCase();
+}
+
+// The one-line titles of the invariants a ticket lists under "## Invariants
+// this touches", as a map of normalized id to the bullet's text with its
+// number and its trailing explanation cut off ("9. Orders never go
+// negative, checked by exit condition 4." -> "Orders never go negative").
+export function invariantTitles(ticketText) {
+  const titles = new Map();
+  const lines = sectionBody(ticketText, "## Invariants this touches").split("\n");
+  for (const line of lines) {
+    const m = /^-\s*([A-Za-z]?\d+)[.:,]\s*(.*)$/.exec(line.trim());
+    if (!m) continue;
+    const title = m[2].split(/,\s+(?:checked|proved|proven|see)\b/i)[0].replace(/[.\s]+$/, "");
+    if (title) titles.set(normalizeInvariantId(m[1]), title);
+  }
+  return titles;
 }

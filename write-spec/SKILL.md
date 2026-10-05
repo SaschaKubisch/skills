@@ -50,7 +50,8 @@ it serves, `roadmap.md: <ID> — <heading>`. Its Candidate items are not
 requirements: copy them under Out of scope, as items still to be
 interviewed. Its Invariants reading `None settled.` is a source, not a
 gap: write `None settled.` under Invariants, respect `specs/system.md`'s,
-and do not stop.
+and do not stop. Its Design invariants reading `None settled.` are
+treated the same way.
 
 `items/<slug>/context/<slug>.md` — an item's record — writes
 `items/<slug>/specs/<slug>.md`, beside the record, with `Parent:
@@ -111,6 +112,15 @@ the repository, before writing.
   from the source that carried them — numbered and grouped as they are
   there. Renaming a group label is fine; rewording an invariant's sentence
   is not — a test is written against that exact sentence later.
+- **The design.** Copied from the record's Design section, with the same
+  rule as the brief: carry the source's own wording, tighten only for
+  redundancy, never for meaning. The design invariants are copied
+  **verbatim** from the record's Design invariants, under their own
+  heading, keeping their D-numbers and grouping — the same rule as the
+  invariants. Name the design method the record settled, for example
+  "Screens are designed and built with the frontend-design skill". A
+  record whose Design section says `No user interface.` writes that line
+  and nothing more.
 - **The exit conditions.** The finish line, as commands: one fenced block,
   one runnable command per line, cheapest first, each exiting non-zero
   while its criterion is not met. Propose them from the criteria the
@@ -119,16 +129,20 @@ the repository, before writing.
   is expected — the tickets' steps create them, and the loop cannot finish
   until they pass. A criterion no command can check goes under
   `NOT CHECKED` with the reason; one only a person can judge goes under
-  `HUMAN CHECK`, with what to look at. Do not invent a criterion the
+  `HUMAN CHECK`, with what to look at. With a user interface, propose
+  commands that check the design invariants the same way — for example
+  accessibility, layout and states checks in the browser — each naming the
+  D-number it decides. Do not invent a criterion the
   sources never gave. Prose is something a loop can claim to have
   satisfied; a command is something it cannot.
 - **The seams — per-topic specs only.** A seam is the point where a
   behaviour can be observed and tested from outside. For each invariant
-  the topic touches: the seam it is observed from and the module that owns
-  it, as the interview settled them. Existing seams before new ones; the
-  highest seam that reaches the behaviour; fewer is better, and the ideal
-  number is one. An invariant with no seam or no owning module is a gap:
-  list it under Open decisions.
+  the topic touches, the design invariants included: the seam it is
+  observed from and the module that owns it, as the interview settled
+  them. Existing seams before new ones; the highest seam that reaches the
+  behaviour; fewer is better, and the ideal number is one. An invariant
+  with no seam or no owning module is a gap: list it under Open
+  decisions.
 - **The open decisions.** Every question the sources or the interview
   raised that the user could not or would not settle — in the user's own
   words, one line each, with what depends on it. Copied from the record's
@@ -173,6 +187,11 @@ the spec just written as its argument.
   nothing anywhere that says what finished means. Say which, name what you
   read and where you looked. Point at `specify`. A spec missing a section
   is an honest gap; a spec with a guessed section is a landmine.
+- The record shows a user interface but has no Design section, or has no
+  Design invariants section and no source carries them: say which. Design
+  invariants reading `None settled.` are a source, not a gap. Name what you
+  read and where you looked. Point at `specify`. A spec with a guessed
+  design is a landmine.
 - The output file is locked: a run holds it. Refuse to overwrite it.
   Changing a spec under a run is a person's decision, made by stopping the
   run first.
@@ -216,6 +235,21 @@ exit condition actually touches>
 
 <verbatim from the source, numbered and grouped as the source has them>
 
+## Design
+
+<the design decisions, copied from the record's Design section, tightened
+for redundancy only. With no user interface, the one line `No user
+interface.`>
+
+### Design invariants
+
+<verbatim from the record, keeping the D-numbers and the grouping. `None
+settled.` if there are none. Left out when there is no user interface>
+
+Design method: <the skill or method that builds the screens, for example
+"Screens are designed and built with the frontend-design skill". Left out
+when there is no user interface>
+
 ## Exit conditions
 
 <one fenced block, one command per line, cheapest first — what must pass
@@ -231,9 +265,9 @@ HUMAN CHECK
 ## Seams and testing
 
 <per-topic specs only; leave out of specs/system.md. For each invariant
-above: the seam it is observed from, and the module that owns it. Which
-tests already exist nearby. External behaviour only, never implementation
-detail>
+above, design invariants included: the seam it is observed from, and the
+module that owns it. Which tests already exist nearby. External behaviour
+only, never implementation detail>
 
 ## Open decisions
 

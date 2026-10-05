@@ -1,6 +1,6 @@
 ---
 name: builder
-description: Works one ticket by the build method — a working copy on its own branch, one test before each step, validation from lint to end to end with screenshots, the HTML report at validation/agent-report.html, and a hand-back with the report's path. Use for implementation and testing of a ticket, and for a judge round's appended steps.
+description: Works one ticket by the build method — a working copy on its own branch, one test before each step, validation from lint to end to end with screenshots, the visual validation report (validation/report.json, rendered to validation/agent-report.html when the config asks), and a hand-back with the report's path. Use for implementation and testing of a ticket, and for a judge round's appended steps.
 model: sonnet
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: judge
-description: The method for checking one built ticket — run every check again, read the diff for softened tests or edited specs, read every screenshot as an image against what it claims to prove, then write the verdict to validation/verdict.md and append findings to PROGRESS.md as unticked judge round <n> lines for the builder. Never fixes anything. The judge agent follows it on Opus; a person can type it.
+description: The method for checking one built ticket — run every check again, read the diff for softened tests or edited specs, read every screenshot as an image against what it claims to prove, read the report's walkthrough storyboard and video frames against the ticket's flow, then write the verdict to validation/verdict.md and report.json and append findings to PROGRESS.md as unticked judge round <n> lines for the builder. Never fixes anything. The judge agent follows it on Opus; a person can type it.
 disable-model-invocation: true
 ---
 
@@ -27,7 +27,9 @@ holds `ticket.md` and `validation/`.
   touches, exit conditions, Not tested, the judge rounds already
   appended to `PROGRESS.md`.
 - The parent spec and `specs/system.md`: the invariants by number.
-- `validation/agent-report.html` and every file under `validation/`.
+- `validation/report.json`, `validation/agent-report.html` when a rendered
+  report is due (the build skill's "The validation report" says when),
+  and every file under `validation/`.
 - `git diff <base>...HEAD` in the worktree, `<base>` the project's base
   branch from CLAUDE.md Conventions (default `main`; see the build
   skill), and any earlier `judge round` findings already in `PROGRESS.md`.
@@ -36,8 +38,10 @@ holds `ticket.md` and `validation/`.
 - The project's workflow config (see the build skill's Conventions
   section): `.claude/workflow.yml`, or every default when it and the
   `workflow config` key are both absent. This method reads
-  `models.recheck`, `review.evidence`, `review.evidence_findings` and
-  `review.reuse_suite_run` from it.
+  `models.recheck`, `review.evidence`, `review.evidence_findings`,
+  `review.reuse_suite_run`, and `validation.report`,
+  `validation.video_walkthrough`, `validation.video_scope` and
+  `validation.before_after` from it.
 
 ## Do
 
@@ -70,10 +74,31 @@ framework put there, or is missing for a screen the walkthrough passes,
 is a finding. Every size the project's Conventions declare (see the
 build skill) exists for every walkthrough screen, or that is a finding.
 
+Then read the walkthrough storyboard against the flow the ticket
+delivers: every screen the flow passes has a step, each step's caption
+says what its screenshot shows, and a before screenshot, when present,
+is the base branch and not this one. Read the report's first screen, the
+verdict banner, tiles and summary: it answers "can I accept this?" on
+its own. The text caps hold (summary 3 sentences and 60 words, a
+caption 12, a not-tested or problems line 25, at most 3 verdict
+reasons); a cap `check-evidence.mjs` misses is a finding.
+
+When a video is due (`validation.video_walkthrough` `true` and in scope,
+see the build skill's "The video"), extract a frame at each chapter's
+`at_s` with `ffmpeg -ss <at_s> -i <video> -frames:v 1 <frame>.png`, or
+read the frames of each `.webm` file, and read them against the
+storyboard. A video that does not show the flow is a finding, labelled
+`evidence`.
+
 **4. Check coverage.** Every unticked step is a finding. Every ticked
 step has a test named for its proves clause, or a line under Not tested
 with a reason you accept. Every invariant under Invariants this touches
-has an end-to-end test with a screenshot where a frontend exists. Every
+has an end-to-end test with a screenshot where a frontend exists. In the
+traceability grid, every touched invariant, the D-numbered ones
+included, has a passing test or a not-tested line; a red or empty row
+is a finding. The builder's verdict, `verdict.builder` in `report.json`,
+is the one the build skill's fixed rules give for the evidence you have
+now seen; a softer one is a finding. Every
 line under Not tested is a real reason, not a way out. Every line in the
 build skill's `## Checklist` section is satisfied, or is a finding tied
 to what that line protects.
@@ -88,10 +113,13 @@ the spec line it breaks or the words "nobody asked for this".
 - **Pass**: nothing found. Write one paragraph to `validation/verdict.md`
   and commit it: what was checked, what the commands returned, how many
   screenshots were read. Append `- [x] judge round <n>: pass` to
-  `PROGRESS.md` and to the report's Rounds section, and commit
-  `verdict.md` and the report together — `PROGRESS.md` is a working
-  file and is not committed. The accept that follows merges from a
-  clean tree.
+  `PROGRESS.md` and to the report's Rounds section, write your verdict
+  line into `report.json`'s `verdict.judge` as `{ "round": <n>,
+  "result": "pass", "line": "<one line>" }` (the shape is in the build
+  skill's "Report schema"), re-render the report when one is due, and
+  commit `verdict.md` and the report together — `PROGRESS.md` is a
+  working file and is not committed. The accept that follows merges from
+  a clean tree.
 - **Findings**: label each one `behaviour` or `evidence` first —
   `evidence` is about what is shown (a screenshot, the report, a name);
   `behaviour` is about what the code does. Append the same to
@@ -100,8 +128,13 @@ the spec line it breaks or the words "nobody asked for this".
   about, and what would satisfy it. Append the same findings to
   `PROGRESS.md` as unticked lines, `- [ ] judge round <n>: <label>:
   <finding>`, one each, and one line per finding to the report's
-  Rounds section; commit `verdict.md` and the report together —
-  `PROGRESS.md` is a working file and is not. The builder works them.
+  Rounds section; write `verdict.judge` as above with `"result":
+  "changes"`; re-render the report when one is due and commit
+  `verdict.md` and the report together — `PROGRESS.md` is a working file
+  and is not. The builder works them.
+
+Your line is yours: never edit `verdict.builder` or its reasons, even
+when you find them wrong; that is a finding.
 
 Every finding is labelled `behaviour` or `evidence`, always. When every
 finding of this round is labelled `evidence`, say so in `verdict.md`:
@@ -123,7 +156,8 @@ that is wrong and one thing that would make it right.
 - A command in the exit conditions cannot run on this machine: say which
   and why; do not pass it.
 - You are about to change a file that is not `PROGRESS.md`, the verdict,
-  or the report's Rounds section: do not. The judge fixes nothing.
+  or the report's Rounds section and `verdict.judge` (and the HTML
+  rendered from them): do not. The judge fixes nothing.
 - The ticket asks for a person's judgement that is not yours to make, a
   design preference, a credential: say so and stop, for a person to
   decide.

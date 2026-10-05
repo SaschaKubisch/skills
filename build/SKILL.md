@@ -1,6 +1,6 @@
 ---
 name: build
-description: The method for working one ticket to done — a working copy on its own branch, one test written before each step and named after what the step proves, validation from lint to end to end with screenshots wherever there is a UI, a self-contained HTML validation report at validation/agent-report.html, and a hand-back with the report's path. The builder agent follows it; a person can type it to work a ticket by hand. Never softens a check; stops and says so instead.
+description: The method for working one ticket to done — a working copy on its own branch, one test written before each step and named after what the step proves, validation from lint to end to end with screenshots wherever there is a UI, a self-contained, mostly visual HTML validation report at validation/agent-report.html, and a hand-back with the report's path. The builder agent follows it; a person can type it to work a ticket by hand. Never softens a check; stops and says so instead.
 disable-model-invocation: true
 ---
 
@@ -58,7 +58,8 @@ Detect, do not assume. Say what you found before the first change:
 ## The project's Conventions
 
 A project's own facts — base branch, checks, end-to-end command,
-screenshot sizes and method, GitHub project — live in one place: a
+screenshot sizes and method, video method, GitHub project — live in one
+place: a
 `## Conventions` section in the project's CLAUDE.md (or AGENTS.md for a
 Codex mirror), a fixed set of bullet keys:
 
@@ -73,21 +74,24 @@ Codex mirror), a fixed set of bullet keys:
 ```
 
 `write-tickets` and `judge` read it the same way this method does.
-`write-tickets` defines every key here except `screenshots` and
-`workflow config`, which are this method's own. When
-it is missing: detect what it would say — `package.json`, a `Makefile`,
+`write-tickets` defines every key here except `screenshots`,
+`video method` and `workflow config`, which are this method's own. The
+block above does not list `video method`: it is one more line, `- video
+method: <how>`, added the first time a video is recorded (see "The
+validation report"). When it is missing: detect what it would say — `package.json`, a `Makefile`,
 CI config for the checks; a UI or not, and which kind, for the
 screenshot method — then write it in, so the next ticket does not
 detect it again. Defaults when nothing declares it: a web UI gets
 Playwright at 1280x800 and 390x844; a terminal UI gets text captures; no
-UI gets command output saved as text; the base branch is `main`; the
+UI gets command output saved as text; the video method is Playwright's
+video, combined with ffmpeg when it is installed; the base branch is `main`; the
 workflow config is `.claude/workflow.yml` if that file exists, else
 every default in the next section.
 
 ## The workflow config
 
-A file of commented keys grouped under `models:`, `review:` and
-`parallel:`, `.claude/workflow.yml`, tunes how this method, `judge` and
+A file of commented keys grouped under `models:`, `review:`, `parallel:`
+and `validation:`, `.claude/workflow.yml`, tunes how this method, `judge` and
 `implement-ticket` work in this project — `install.sh` copies a starting
 one, never over a project's own. A key a group leaves out, a group the
 file leaves out, or a missing file, takes the default below.
@@ -119,6 +123,39 @@ file leaves out, or a missing file, takes the default below.
 - `tickets` — `1` (default). `implement-ticket`'s own key; see that
   method.
 - `e2e_workers` — `1` (default). See "Parallel end to end" below.
+
+`validation` — tunes the validation report this method writes; each key
+is described in "The validation report" section. A value that is not
+allowed stops the config from loading, with an error naming the key.
+The evidence, `validation/report.json` and the screenshots, is always
+written and checked; no key turns it off. When no rendered report is due
+for a ticket (`report` is `false`, or `report_scope` is `item` and the
+ticket does not empty its item's backlog, as defined under "Where it
+lives, and when it is due"), `implement-ticket` shows a short summary in
+the chat instead. The keys:
+- `report` — `true` by default. `false`: no rendered report (HTML or
+  PDF); the evidence is still kept.
+- `report_scope` — `ticket` (default) or `item`. `ticket`: a rendered
+  report for every ticket. `item`: one for the whole item, after the
+  ticket that empties its item's backlog.
+- `report_pdf` — `false` (default). `true`: also write a PDF of each
+  rendered report, `validation/agent-report.pdf` beside the HTML.
+- `video_walkthrough` — `false` (default). `true`: record the key flow
+  as a video with chapters, embedded in the report.
+- `video_scope` — `ticket` (default) or `item`. `ticket`: every ticket's
+  report gets the video. `item`: only the ticket that empties its item's
+  backlog.
+- `video_commit` — `true` by default. `false`: keep videos git-ignored
+  instead of committed.
+- `video_max_mb` — `10` (default). A larger video is re-encoded or
+  shortened; `check-evidence.mjs` refuses it if it is still over.
+- `before_after` — `false` (default). `true`: also capture the
+  walkthrough screens on the base branch, shown side by side.
+- `traces` — `true` by default. Failed and retried tests link to their
+  Playwright trace; flaky tests are marked. `false`: no trace links.
+- `changed_line_coverage` — `false` (default). `true`: a tile with the
+  test coverage of only this ticket's changed lines; needs the
+  project's coverage tool.
 
 ## Do
 
@@ -167,13 +204,23 @@ every size Conventions declares:
   observed. A touched invariant is any under Invariants this touches, or
   any a step's `proves:` clause names (a number next to the word
   "invariant"/"invariants", or a letter-number id like `D1` on its own,
-  as `specs/design.md`'s invariants are named) — every one has a test.
+  as a spec's design invariants are named: the Design section inside each
+  spec numbers them D1, D2, ...) — every one has a test.
 - **One test per exit condition a screen can observe**, named
   `exit-<NN>-<slug>`, with its shot.
 
 Capture every one of these in a single pass, right after the last code
 change of the round — never once per step. Save each shot straight into
 the ticket's `validation/screenshots/` folder as it is captured.
+
+The walkthrough shots are the report's storyboard: they are the same
+files, not a second capture. With `validation.before_after` true, the same
+pass also captures the same walkthrough on the base branch, one shot per
+screen and size named `before-walkthrough-<NN>-<screen>.png`: in a git
+worktree of the base branch, or on a checkout of the base commit, and the
+branch you were on is restored afterwards. With `validation.video_walkthrough`
+true and in scope, the same pass records the video too; see "The
+validation report".
 
 **Parallel end to end.** The end-to-end command from Conventions is what
 runs; a project that wants it against a production build puts that in
@@ -183,27 +230,23 @@ each worker its own test resources (a database, a port), documented the
 same way — without that, run with one worker regardless of the key's
 value.
 
-**5. The report.** `validation/agent-report.html` in the ticket folder,
-self-contained: screenshots by relative path in `screenshots/`, no
-external asset but the diagram renderer. Written for someone who has not
-seen the ticket: plain words, every project term explained once.
-Sections, in order: implemented, per step; tests by kind with each
-result; the commands with exit codes; not tested and why; the
-screenshots with one line each on what to look at; the diagrams of the
-code as built, whole, with this ticket's changes highlighted; the
-rounds — the judge's, and the person's requested changes — appended as
-they happen.
-
-Write `validation/report.json` first (schema below), then run `node
+**5. The report.** Write `validation/report.json` first (schema below);
+the report it feeds, and what each part must show, is "The validation
+report" below. When a rendered report is due, run `node
 .claude/skills/build/scripts/render-report.mjs <ticket-folder>` to
-produce the HTML from it. Regenerate `report.json` whole after every
-round, then re-render; the one edit anyone else makes is the judge's
-line appended to `report.json`'s `rounds`, which the next regeneration
-carries over.
+produce the HTML from it (it prints one line and writes nothing when no
+rendered report is due); with `validation.report_pdf`, `node
+.claude/skills/build/scripts/render-pdf.mjs <ticket-folder>` adds the PDF,
+using the Playwright of the project (`--project <root>` names another
+project root). Regenerate `report.json` whole after every round,
+then re-render; the edits anyone else makes are the judge's line appended
+to `report.json`'s `rounds` and its entry in `verdict.judge`, which the
+next regeneration carries over.
 
 Commit the report, `report.json`, and `validation/screenshots/` every
 time they are written — `<type>(<NNNN>): report` — so the tree is clean
-for the judge and for the merge `implement-ticket` makes on accept.
+for the judge and for the merge `implement-ticket` makes on accept. A
+video goes in the same commit, unless `validation.video_commit` is `false`.
 
 **6. Hand back.** With `review.evidence: script` (default), run `node
 .claude/skills/build/scripts/check-evidence.mjs <ticket-folder>` and fix
@@ -226,6 +269,109 @@ the report and commit it, as in step 5. A finding you believe is wrong: say why 
 under Not tested — leave the step unticked, and stop; a person decides.
 Never argue a finding away in silence.
 
+## The validation report
+
+The validation report lets the engineer who decides whether to accept the
+ticket see what was built, whether it works and what is risky, without
+reading much. Saving that engineer's time is its goal, so it is mainly
+visual (screenshots, diagrams, tiles, grids) and its text is short.
+
+`validation/agent-report.html`, rendered from `report.json`, top to
+bottom:
+
+1. **Verdict banner.** `Ready`, `Ready with notes` or `Not ready`, with at
+   most 3 reasons. The builder's verdict follows fixed rules. Not ready:
+   any command of the round failed, any test failed, or the whole-suite
+   run is missing. Ready with notes: anything is under not tested (a skipped
+   PDF included), any changed module is high risk, or a flaky test was
+   retried. Ready: otherwise. When the judge ran, its verdict stands beside the builder's.
+   The judge writes its own line; the builder never writes it.
+2. **Tiles.** Steps done; tests passed and failed; invariants covered,
+   the numbered ones and the design invariants `D1`, `D2`, ...; not
+   tested; problems fixed; review rounds; and, when
+   `validation.changed_line_coverage` is `true`, the test coverage of the
+   changed lines. Under the tiles, the summary: at most 3 sentences and
+   60 words.
+3. **Walkthrough storyboard.** With a UI it is always present, whatever
+   the video setting: numbered steps grouped by role, each with a caption
+   of at most 12 words and its walkthrough screenshot at every declared
+   size, side by side. With `validation.before_after` `true`, the same
+   screen captured on the base branch sits beside it. With
+   `validation.video_walkthrough` `true` and in scope, the video, with
+   chapters, sits on top. Without a UI, the command outputs that stand in
+   for screens.
+4. **Journeys.** One small flowchart per role of the journey this ticket
+   delivers, each box naming its storyboard step.
+5. **What changed.** The module-and-dependency diagram and the sequence
+   diagram of the new flow, this ticket's changes highlighted (the
+   `changed` class, see the schema) with a legend. One bar per changed
+   file, lines added and removed from `git diff --stat` against the base
+   branch, grouped by module. A risk tier per changed module: high if it
+   touches permissions, authentication, money, database migrations or
+   audit; medium if it changes shared code other modules import; low
+   otherwise.
+6. **Traceability grid.** Every touched invariant, numbered and
+   D-numbered, against the tests that prove it. A cell is green when the
+   test passes, with its evidence screenshot linked; red when it fails;
+   an invariant no test proves is a red row. With `validation.traces`
+   `true`, a failed or retried test links its Playwright trace, and a
+   retried test is marked flaky.
+7. **Not tested and Problems fixed.** Not tested: one line each, what and
+   why. Problems fixed: one card each, problem, cause, fix, commit. Every
+   line is at most 25 words.
+8. **Folded closed**, collapsed by default: the full test table, every
+   command with its exit code, the review rounds, and the invariant and
+   exit screenshots the grid does not already show.
+
+The rules that run through it:
+
+- Every section starts with its visual; the text comes after it.
+- A section's note is at most 2 sentences. A long list starts collapsed.
+- The report is self-contained: screenshots and videos by relative path,
+  and the diagram renderer is the one external asset allowed.
+
+**Where it lives, and when it is due.** Scope `ticket` (`report_scope`,
+`video_scope`): the outputs sit in the ticket's own `validation/` folder,
+`agent-report.html`, `agent-report.pdf`, `walkthrough.mp4` or the `.webm`
+files, and `screenshots/`. Scope `item`: the item-wide outputs sit in the
+item's root, `items/<item>/validation/`, and the ticket that empties its
+item's backlog produces them. A ticket empties its item's backlog when
+no other ticket of its item is left in `backlog/` or `in-progress/`.
+The per-ticket evidence, `report.json` and
+`screenshots/`, stays in each ticket's own folder; the item report links
+it by relative path. A rendered report is not due when `validation.report`
+is `false`, or when `report_scope` is `item` and the ticket does not
+empty its item's backlog. Then `report.json`, the screenshots and
+`check-evidence.mjs` still run, no HTML is rendered, and `implement-ticket`
+prints a chat summary instead: the verdict, the test counts, what was not
+tested, and the screenshots folder.
+
+**A report for a whole item** (`report_scope: item`). The ticket that
+empties its item's backlog renders one report for the item: the evidence
+of all its tickets, and their storyboards and diagrams, merged. One line in
+the report says where the item's tickets live.
+
+**The PDF.** With `validation.report_pdf` `true`, `render-pdf.mjs`, beside
+`render-report.mjs`, writes `agent-report.pdf` next to the HTML. Without a
+headless browser it skips, writes the reason to `report.json`'s
+`pdf.skipped`, and the report shows it under Not tested.
+
+**The video.** With `validation.video_walkthrough` `true` and in scope
+(`video_scope`: `ticket` gives every ticket's report the video, `item`
+only the ticket that empties its item's backlog), the video is captured in
+the same single pass as the screenshots, never in a second one.
+
+- One recording per role, with Playwright's video. With ffmpeg, combine
+  them side by side with a caption per chapter into `walkthrough.mp4`.
+  Without ffmpeg, keep one `.webm` per role and say so in the video's
+  `claim`.
+- Detect the method once and write it into Conventions as a `video
+  method:` line, as the screenshot method is.
+- `video_commit` `false`: add the video to `.gitignore`, at whichever of
+  the two places it lives.
+- `video_max_mb`: a larger video is re-encoded or shortened first.
+  `check-evidence.mjs` measures the real file.
+
 ## Report schema
 
 `validation/report.json`, read by `render-report.mjs` and by
@@ -240,10 +386,13 @@ Never argue a finding away in silence.
   "started": "2026-01-01T10:00:00Z",
   "ended": "2026-01-01T12:00:00Z",
   "ended_by": "exit conditions passed",
+  "verdict": { "builder": "ready_with_notes", "reasons": ["<at most 3>"], "judge": null },
+  "summary": "<at most 3 sentences and 60 words>",
   "steps": [ { "n": 1, "summary": "<what exists now because of it>" } ],
   "tests": [
     { "kind": "unit", "name": "<test name>", "proves": "<step or invariant>", "result": "pass", "evidence": null },
-    { "kind": "end to end", "name": "<test name>", "proves": "invariant 4", "result": "pass", "evidence": "invariant-04-order-total-1280x800.png" }
+    { "kind": "end to end", "name": "<test name>", "proves": "invariant 4", "result": "pass", "evidence": "invariant-04-order-total-1280x800.png" },
+    { "kind": "end to end", "name": "<test name>", "proves": "D2 of specs/system.md", "result": "pass", "evidence": "invariant-d2-table-state-1280x800.png" }
   ],
   "not_tested": [ { "what": "<what>", "reason": "<why>" } ],
   "commands": [
@@ -251,12 +400,67 @@ Never argue a finding away in silence.
     { "command": "npx playwright test", "exit_code": 0, "commit": "<hash>", "whole_suite": true }
   ],
   "screenshots": [
-    { "file": "walkthrough-01-menu", "claim": "<what to look at>", "sizes": ["1280x800", "390x844"] }
+    { "file": "walkthrough-01-menu", "claim": "<what to look at>", "sizes": ["1280x800", "390x844"] },
+    { "file": "before-walkthrough-01-menu", "claim": "<the same screen on the base branch>", "sizes": ["1280x800", "390x844"] }
   ],
+  "journeys": [
+    { "role": "<role>", "steps": [
+      { "n": 1, "caption": "<at most 12 words>", "screenshot": "walkthrough-01-menu", "before": "before-walkthrough-01-menu" }
+    ] }
+  ],
+  "changes": [
+    { "file": "app/prices.ts", "module": "prices", "added": 10, "removed": 2, "risk": "high", "risk_reason": "<why>" }
+  ],
+  "problems": [ { "problem": "<what>", "cause": "<why>", "fix": "<what changed>", "commit": "<hash>" } ],
+  "videos": [
+    { "file": "walkthrough.mp4", "claim": "<what it shows>", "duration_s": 40, "size_mb": 4.2,
+      "chapters": [ { "at_s": 0, "title": "<chapter>" } ] }
+  ],
+  "traces": [ { "test": "<test name>", "file": "traces/<test>.zip", "retried": true } ],
+  "coverage": { "changed_lines_pct": 91.5 },
+  "pdf": { "skipped": "<why, when render-pdf.mjs could not write it>" },
   "rounds": [ { "round": "judge round 1", "findings": ["<one line per finding>"] } ],
   "diagrams": [ { "title": "Modules and dependencies", "text": "flowchart LR\n..." } ]
 }
 ```
+
+Always required: `verdict`, `summary`, `journeys` when there is a UI (any
+`walkthrough-` screenshot), `changes`, `problems` (each may be an empty
+list) and `not_tested`. Required only when the config asks:
+
+- `videos`: with `video_walkthrough` `true` and in scope.
+- `traces`: with `traces` `true`, an entry for every failed test and
+  every retried test; otherwise `[]` or left out.
+- `coverage`: with `changed_line_coverage` `true`; otherwise `null` or left
+  out.
+- `pdf`: `null` (or left out) when the PDF was written or is not due;
+  `{ "skipped": "<reason>" }` when `report_pdf` is `true` and
+  `render-pdf.mjs` skipped. `check-evidence.mjs` then accepts the missing
+  PDF.
+- `journeys[].steps[].before`: with `before_after` `true`; otherwise
+  `null`.
+
+`verdict.builder` is `ready`, `ready_with_notes` or `not_ready`, by the
+rules in "The validation report"; `reasons` has at most 3 entries.
+`verdict.judge` is `null` until the judge runs, then the judge's own
+entry, `{ "round": 1, "result": "pass", "line": "<its one line>" }`. The
+builder never writes it and a regeneration carries it over.
+
+`summary` is at most 3 sentences and 60 words. A journey step's `caption`
+is at most 12 words and its `screenshot` is the `file` of an entry in
+`screenshots`; its `before` is the `file` of the same screen on the base
+branch, also an entry in `screenshots`, present at every declared size.
+`changes` has one entry per changed file, with `added` and `removed` from
+`git diff --stat` against the base branch and a `risk` of `high`,
+`medium` or `low` by the rules in "The validation report". Each `problems`
+field and each `not_tested` line (what and reason together) is at most 25
+words. A `videos[].file` is a path relative to the folder that holds the video:
+the ticket's `validation/` at scope `ticket`, `items/<item>/validation/`
+at scope `item`. A `traces[].file` is relative to the ticket's
+`validation/`. `size_mb` is for the renderer; the check measures the file.
+`chapters[].at_s` is seconds from
+the start. In `tests[].proves`, a design invariant is written `D<n> of
+<spec path>`.
 
 `commands` carries every command run this round, not only the
 exit-conditions block; the one whole-suite run of the round (see step 4)
@@ -265,15 +469,16 @@ whole-suite rule reads exactly this. `screenshots[].sizes` names every
 size actually captured for that shot — every size Conventions declares
 must be among them, and each must exist as `<file>-<size>.png` under
 `validation/screenshots/`. `screenshots[].file` matches its filenames
-without the size suffix, and carries the `walkthrough-`, `invariant-` or
-`exit-` prefix the naming rules above give it. `diagrams[].text` is the
-fenced block's contents without the fence, one entry per diagram kind:
-module graph, schema, sequence, lifecycle. Each diagram is drawn from
-the code as built after the ticket, whole; this ticket's changes are in
-a `changed` class (e.g. `classDef changed fill:#fff3bf,stroke:#b38600`
-in a flowchart), removed parts dashed. The module-and-dependency diagram
-carries a caption of at most five sentences: what changed and which
-steps did it.
+without the size suffix, and carries the `walkthrough-`, `before-walkthrough-`,
+`invariant-` or `exit-` prefix the naming rules above give it.
+`diagrams[].text` is the fenced block's contents without the fence, one
+entry per diagram kind: module graph, schema, sequence, lifecycle. Each
+diagram is drawn from the code as built after the ticket, whole; this
+ticket's changes are in a `changed` class (e.g. `classDef changed
+fill:#fff3bf,stroke:#b38600` in a flowchart), removed parts dashed, and
+the diagram carries a legend saying so. The module-and-dependency diagram
+carries a caption of at most two sentences: what changed and which steps
+did it.
 
 ## The whole-suite record
 
