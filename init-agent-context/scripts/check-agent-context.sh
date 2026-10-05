@@ -157,7 +157,8 @@ done
 # A map line is a plain list line outside fences that starts with the folder in
 # backticks, as "- `folder/` what it holds". The map ends at the next "## "
 # heading. In a git root the folders are the ones git tracks, hidden or not;
-# elsewhere, the directories present.
+# elsewhere, the directories present except .git and node_modules, the folders
+# the nested-file search skips too.
 rootfile="$(content_file .)"
 if [ -n "$rootfile" ]; then
   if [ "$(git rev-parse --show-toplevel 2>/dev/null)" = "$(pwd -P)" ]; then
@@ -168,7 +169,7 @@ if [ -n "$rootfile" ]; then
         if (index(p, "/")) print substr(p, 1, index(p, "/") - 1)
         else if (m[1] == "160000") print p }' | sort -u)"
   else
-    folders="$(find . -mindepth 1 -maxdepth 1 -type d -not -name .git | sed 's|^\./||' | sort)"
+    folders="$(find . -mindepth 1 -maxdepth 1 -type d -not -name .git -not -name node_modules | sed 's|^\./||' | sort)"
   fi
   mapped="$(unfenced "$rootfile" | awk '
     /^## / { inmap = ($0 ~ /^##[ \t]+Map[ \t]*$/); next }

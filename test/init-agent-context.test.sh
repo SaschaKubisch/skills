@@ -120,6 +120,15 @@ test_pair_in_git_checks_a_folder_not_yet_added() {
   [ "$code" -eq 1 ] && grep -q '^docs/AGENTS\.md: pair: ' <<<"$out" && ok "${FUNCNAME[0]}" || no "${FUNCNAME[0]}: exit $code: $out"
 }
 
+test_map_outside_git_skips_node_modules_and_git_folders() {
+  local t; t="$(mktemp -d)"
+  cp -R "$samples/good/." "$t/"
+  mkdir -p "$t/node_modules/pkg" "$t/.git"; echo x > "$t/node_modules/pkg/f"
+  out="$(bash "$script" "$t" 2>&1)"; code=$?
+  rm -rf "$t"
+  [ "$code" -eq 0 ] && ok "${FUNCNAME[0]}" || no "${FUNCNAME[0]}: exit $code: $out"
+}
+
 test_a_missing_directory_exits_2_with_no_rule_lines() {
   # from inside a passing sample, so a script that falls back to the caller's directory would exit 0
   out="$(cd "$samples/good" && bash "$script" /nonexistent-dir-for-test 2>&1)"; code=$?
