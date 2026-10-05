@@ -15,13 +15,18 @@ from a plain, interactive Claude Code session.
 - **specify** — interviews the user about a brief, a feature or a whole
   product, one question at a time, until nothing is left silently
   assumed; writes the project's vocabulary, its hard decisions, and an
-  interview record of everything else that settled.
+  interview record of everything else that settled. When the thing has a
+  user interface, the design is a required branch of the interview, and
+  the record gains a Design section and design invariants (D1, D2, ...).
 - **write-spec** — turns an interview record into a locked spec: the
   word-for-word statement of what must be true, with a finish line of
-  runnable commands.
+  runnable commands. It carries a Design section: the design decisions,
+  the design invariants and the method that builds the screens.
 - **write-tickets** — cuts a spec into tickets: vertical slices sized to
-  one run, each with its steps and its exit conditions. Names no
-  implementing method; any can work the tickets.
+  one run, each with its steps and its exit conditions. Each ticket that
+  builds a screen starts with a design brief, and the first UI ticket
+  builds the design system where there is none. Names no implementing
+  method; any can work the tickets.
 - **build** — the method for working one ticket to done: a branch, one
   test per step, validation from cheapest check to end to end, and a
   self-contained HTML report, checked against the ticket by a script
@@ -45,12 +50,14 @@ The planning skills know nothing of the building skills. `specify` and
 `write-spec` each close by asking the person one question and, on yes,
 read the next skill's `SKILL.md` at its installed path and follow it:
 `specify` settles what is meant and writes an interview record, then
-asks whether to write the spec now. `write-spec` turns the record into a
-locked spec, then asks whether to cut it into tickets now.
-`write-tickets` cuts the spec into tickets — small enough for one run,
-each with its own exit conditions — names the first one, and stops. Any
-of the three also works typed on its own — `/specify`, `/write-spec`,
-`/write-tickets` — outside the chain.
+asks whether to write the spec now. When the thing has a user interface,
+that includes its design and its design invariants. `write-spec` turns
+the record into a locked spec, with a Design section, then asks whether
+to cut it into tickets now. `write-tickets` cuts the spec into tickets —
+small enough for one run, each with its own exit conditions, and each
+screen ticket starting from a design brief — names the first one, and
+stops. Any of the three also works typed on its own — `/specify`,
+`/write-spec`, `/write-tickets` — outside the chain.
 
 The person then starts the building side. `/implement-ticket <slug>
 [--judge]` works one ticket: it claims it
