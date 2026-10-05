@@ -49,6 +49,8 @@ Detect, do not assume:
 
 - `AGENTS.md` and `CLAUDE.md` at the project root. For each: absent, a real
   file, or a symlink, and where a symlink points.
+- Both real files with identical text: no text is lost by linking. Step 6
+  replaces `CLAUDE.md` with the link.
 - Both real files with different text: stop. See Stop when.
 - A git repository? The branch checked out, the base branch (`git
   symbolic-ref refs/remotes/origin/HEAD`, else the branch names `main` and
@@ -61,9 +63,10 @@ Detect, do not assume:
 - The commands: the scripts in the manifest, `Makefile` targets, CI config.
   Run none of them here.
 - `gh auth status`, and the GitHub projects of the repository, for the
-  `github project` line.
+  `github project` line. Keep the list when there is more than one.
 - Which sections the existing file already has: the
-  description, `## Map`, `## Commands`, `## Conventions`.
+  description, `## Map`, `## Commands`, `## Conventions`. The file has a
+  description when any paragraph sits before its first `## ` heading.
 
 Say what you found before the first question.
 
@@ -85,7 +88,8 @@ options "Move the text to AGENTS.md and link CLAUDE.md to it (Recommended)"
 / "Keep CLAUDE.md as the real file and link AGENTS.md to it" / "I don't
 understand".
 
-**2. Propose the description.** Only when the file has none. Draft two
+**2. Propose the description.** Only when the file has none: no paragraph
+sits before its first `## ` heading. Draft two
 short versions of what the project is, one paragraph each, from the
 README and the manifest, and ask (see Asking), header `Project`, with the
 two drafts as options and then "I don't understand". The paragraph says
@@ -125,7 +129,11 @@ Write it in the format under Formats, the section other skills read. The
 base branch comes from git. The checks come from the detected commands,
 cheapest first. The end-to-end command is the one that runs the whole
 thing as a user would, or `none` when the project has none. The GitHub
-project is the one `gh` shows for the repository, else `none`. Show the
+project is the one `gh` shows for the repository, else `none`. When `gh`
+shows several projects, ask, header `GitHub`, with the projects as options
+and then "I don't understand"; the form's free-text answer takes any other
+name. With more than two projects, propose the two most recently updated
+and say in the question that these are two of several. Show the
 section in the question text and ask, header `Conventions`: "Use the
 Conventions as drafted? (Recommended)" / "Change them" / "I don't
 understand". Independent questions may share one call.
@@ -136,7 +144,12 @@ user chose to move the text, first `git mv CLAUDE.md AGENTS.md` (plain
 exists, create `AGENTS.md` with a title, the description, and the
 sections in this order: `## Map`, `## Commands`, `## Conventions`. An
 existing real file: append only the missing sections, in that order,
-after its last line, and touch no existing line. Then link the other name
+after its last line, and touch no existing line. A missing description
+goes in as a paragraph right under the first `# ` heading, or at the top of
+the file when there is none; nothing existing changes. When `AGENTS.md`
+and `CLAUDE.md` are both real files with identical text, remove
+`CLAUDE.md` first (`git rm -q CLAUDE.md`, plain `rm` when it is not
+tracked or outside git); the link replaces it. Then link the other name
 to the real file, in the same folder: `ln -s AGENTS.md CLAUDE.md`, or
 `ln -s CLAUDE.md AGENTS.md` when `CLAUDE.md` stays the real file. A link
 that already points to the real file stays.
@@ -154,8 +167,8 @@ repository: say so and skip. Never `git add -A`.
 
 ## Stop when
 
-- Both `AGENTS.md` and `CLAUDE.md` are real files with different text: say
-  so and stop. Never merge them. The user decides what to do with the two.
+- Both `AGENTS.md` and `CLAUDE.md` are real files with different text
+  (identical text is not a stop; see step 6): say so and stop. Never merge them. The user decides what to do with the two.
 - A question needs a fact you could look up: look it up.
 - A question depends on an answer you have not heard: it waits.
 - More than one question would fit in the form: ask them in one call only
