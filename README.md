@@ -27,6 +27,16 @@ from a plain, interactive Claude Code session.
   builds a screen starts with a design brief, and the first UI ticket
   builds the design system where there is none. Names no implementing
   method; any can work the tickets.
+- **init-agent-context** — sets up the standing instruction file every
+  agent session in a project reads: `AGENTS.md` as the real file and
+  `CLAUDE.md` as a link to it. It writes structure and no rules: a short
+  description, a Map of the top-level folders, the exact Commands, and
+  the Conventions section the other skills read. In a project that has
+  the file, it adds only the missing sections and never rewrites text.
+  Ships `scripts/check-agent-context.sh`, which finds a broken pair, a
+  path that does not exist, a date that goes stale and a folder missing
+  from the Map. Typed on its own, `/init-agent-context`; not part of
+  the planning or building flow.
 - **build** — the method for working one ticket to done: a branch, one
   test per step, validation from cheapest check to end to end, and a
   visual validation report for the engineer who accepts the ticket: the
@@ -121,8 +131,8 @@ and never changes it.
 ./install.sh /path/to/project
 ```
 
-This copies `specify/`, `write-spec/`, `write-tickets/`, `build/`,
-`judge/` and `implement-ticket/` into `<project>/.claude/skills/<name>/`,
+This copies `specify/`, `write-spec/`, `write-tickets/`,
+`init-agent-context/`, `build/`, `judge/` and `implement-ticket/` into `<project>/.claude/skills/<name>/`,
 `LICENSE` into `<project>/.claude/skills/LICENSE`,
 `agents/builder.md` and `agents/judge.md` into
 `<project>/.claude/agents/`, and the default `workflow.yml` into
@@ -138,8 +148,8 @@ Without the script, copy the same folders by hand into the same places.
 ./install.sh --planning /path/to/project
 ```
 
-This copies only `specify/`, `write-spec/`, `write-tickets/` and
-`LICENSE`, and no agents and no `workflow.yml`. The planning skills need nothing else. Work
+This copies only `specify/`, `write-spec/`, `write-tickets/`,
+`init-agent-context/` and `LICENSE`, and no agents and no `workflow.yml`. The planning skills need nothing else. Work
 the tickets by any method: the exit
 conditions under `## Exit conditions` decide done, and the ready gate
 described in `write-tickets` decides when a ticket may start.
@@ -150,8 +160,8 @@ described in `write-tickets` decides when a ticket may start.
 project's own `CLAUDE.md` for the facts specific to that project — its
 base branch, its checks, how it runs end to end, how it takes
 screenshots, its workflow config, and whether a GitHub project mirrors
-its tickets. Add it once, or let `write-tickets` propose it the first
-time it runs. The `screenshots` and `workflow config` keys are the
+its tickets. Add it once, let `init-agent-context` write it, or let
+`write-tickets` propose it the first time it runs. The `screenshots` and `workflow config` keys are the
 build method's own; `write-tickets` defines the other four:
 
 ```

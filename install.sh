@@ -4,14 +4,14 @@
 #   ./install.sh /path/to/project
 #   ./install.sh --planning /path/to/project
 #
-# Without --planning: copies specify/, write-spec/, write-tickets/, build/,
-# judge/ and implement-ticket/ into <project>/.claude/skills/<name>/,
+# Without --planning: copies specify/, write-spec/, write-tickets/,
+# init-agent-context/, build/, judge/ and implement-ticket/ into <project>/.claude/skills/<name>/,
 # LICENSE into <project>/.claude/skills/LICENSE, agents/builder.md and
 # agents/judge.md into <project>/.claude/agents/, and the default
 # workflow.yml into <project>/.claude/workflow.yml — only when the
 # project has none there yet; an existing one is never overwritten.
-# With --planning: copies only specify/, write-spec/ and write-tickets/
-# into <project>/.claude/skills/<name>/ and LICENSE into
+# With --planning: copies only specify/, write-spec/, write-tickets/ and
+# init-agent-context/ into <project>/.claude/skills/<name>/ and LICENSE into
 # <project>/.claude/skills/LICENSE; no agents and no workflow.yml are
 # copied, since the planning skills read neither.
 # Existing files or folders with the same names are replaced; nothing
@@ -45,9 +45,9 @@ done
 here="$(cd "$(dirname "$0")" && pwd)"
 
 if [[ "$planning" -eq 1 ]]; then
-  skills=(specify write-spec write-tickets)
+  skills=(specify write-spec write-tickets init-agent-context)
 else
-  skills=(specify write-spec write-tickets build judge implement-ticket)
+  skills=(specify write-spec write-tickets init-agent-context build judge implement-ticket)
 fi
 
 mkdir -p "$target/.claude/skills"
@@ -70,12 +70,12 @@ fi
 if [[ "$planning" -eq 1 ]]; then
   cat <<EOF
 installed into $target:
-  .claude/skills/specify, write-spec, write-tickets, LICENSE
+  .claude/skills/specify, write-spec, write-tickets, init-agent-context, LICENSE
 EOF
 else
   cat <<EOF
 installed into $target:
-  .claude/skills/specify, write-spec, write-tickets, build, judge, implement-ticket, LICENSE
+  .claude/skills/specify, write-spec, write-tickets, init-agent-context, build, judge, implement-ticket, LICENSE
   .claude/agents/builder, judge
   .claude/workflow.yml (only if the project had none)
 EOF

@@ -33,9 +33,14 @@ mkdir -p "$project"
 }
 rm -f /tmp/install-output.$$
 
-for s in specify write-spec write-tickets build judge implement-ticket; do
+for s in specify write-spec write-tickets init-agent-context build judge implement-ticket; do
   check "$here/$s/SKILL.md" "$project/.claude/skills/$s/SKILL.md"
 done
+check "$here/init-agent-context/scripts/check-agent-context.sh" "$project/.claude/skills/init-agent-context/scripts/check-agent-context.sh"
+if [[ ! -x "$project/.claude/skills/init-agent-context/scripts/check-agent-context.sh" ]]; then
+  echo "FAIL: the installed check-agent-context.sh is not executable" >&2
+  fail=1
+fi
 check "$here/LICENSE" "$project/.claude/skills/LICENSE"
 check "$here/agents/builder.md" "$project/.claude/agents/builder.md"
 check "$here/agents/judge.md" "$project/.claude/agents/judge.md"
@@ -96,9 +101,10 @@ mkdir -p "$planning_project"
 }
 rm -f /tmp/install-planning-output.$$
 
-for s in specify write-spec write-tickets; do
+for s in specify write-spec write-tickets init-agent-context; do
   check "$here/$s/SKILL.md" "$planning_project/.claude/skills/$s/SKILL.md"
 done
+check "$here/init-agent-context/scripts/check-agent-context.sh" "$planning_project/.claude/skills/init-agent-context/scripts/check-agent-context.sh"
 check "$here/LICENSE" "$planning_project/.claude/skills/LICENSE"
 
 for s in build judge implement-ticket; do
@@ -174,12 +180,26 @@ if [[ -n "$build_conventions" && -n "$write_tickets_conventions" ]]; then
   done <<<"$write_tickets_conventions"
 fi
 
+# init-agent-context writes the Conventions format write-tickets documents:
+# the two fenced blocks must be byte-identical
+init_conventions="$(extract_conventions "$here/init-agent-context/SKILL.md")"
+if [[ -z "$init_conventions" ]]; then
+  echo "FAIL: init-agent-context/SKILL.md has no fenced Conventions block" >&2
+  fail=1
+elif [[ "$init_conventions" != "$write_tickets_conventions" ]]; then
+  echo "FAIL: init-agent-context/SKILL.md's Conventions block differs from write-tickets/SKILL.md's" >&2
+  fail=1
+fi
+
 if [[ "$fail" -eq 0 ]]; then
   echo "PASS: install.sh copies every file byte-identical, refuses a bad target, --planning copies only the planning skills and refuses unknown flags, workflow.yml lands and is never overwritten, build/SKILL.md and README.md's Conventions blocks match, and write-tickets/SKILL.md's Conventions block is a subset of build's"
 fi
 
 # the shared workflow config reader, on its own
 node "$here/test/workflow-lib.test.mjs" || fail=1
+
+# the instruction-file check script, against its samples
+bash "$here/test/init-agent-context.test.sh" || fail=1
 
 # the evidence and report scripts, against their fixtures
 node "$here/test/scripts.test.mjs" || fail=1
