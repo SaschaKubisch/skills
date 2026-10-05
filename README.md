@@ -148,8 +148,9 @@ Without the script, copy the same folders by hand into the same places.
 ./install.sh --planning /path/to/project
 ```
 
-This copies only `specify/`, `write-spec/`, `write-tickets/`,
-`init-agent-context/` and `LICENSE`, and no agents and no `workflow.yml`. The planning skills need nothing else. Work
+This copies only the three planning skills `specify/`, `write-spec/` and
+`write-tickets/`, plus `init-agent-context/` and `LICENSE`. It copies no
+agents and no `workflow.yml`: none of these four skills reads them. Work
 the tickets by any method: the exit
 conditions under `## Exit conditions` decide done, and the ready gate
 described in `write-tickets` decides when a ticket may start.

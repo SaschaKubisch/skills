@@ -105,6 +105,10 @@ for s in specify write-spec write-tickets init-agent-context; do
   check "$here/$s/SKILL.md" "$planning_project/.claude/skills/$s/SKILL.md"
 done
 check "$here/init-agent-context/scripts/check-agent-context.sh" "$planning_project/.claude/skills/init-agent-context/scripts/check-agent-context.sh"
+if [[ ! -x "$planning_project/.claude/skills/init-agent-context/scripts/check-agent-context.sh" ]]; then
+  echo "FAIL: the --planning install's check-agent-context.sh is not executable" >&2
+  fail=1
+fi
 check "$here/LICENSE" "$planning_project/.claude/skills/LICENSE"
 
 for s in build judge implement-ticket; do

@@ -10,10 +10,11 @@
 # agents/judge.md into <project>/.claude/agents/, and the default
 # workflow.yml into <project>/.claude/workflow.yml — only when the
 # project has none there yet; an existing one is never overwritten.
-# With --planning: copies only specify/, write-spec/, write-tickets/ and
-# init-agent-context/ into <project>/.claude/skills/<name>/ and LICENSE into
+# With --planning: copies only the planning skills specify/, write-spec/
+# and write-tickets/, plus init-agent-context/, into
+# <project>/.claude/skills/<name>/ and LICENSE into
 # <project>/.claude/skills/LICENSE; no agents and no workflow.yml are
-# copied, since the planning skills read neither.
+# copied, since none of these four skills reads them.
 # Existing files or folders with the same names are replaced; nothing
 # else under the target is touched.
 # Licence: MIT, see LICENSE.
