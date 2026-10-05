@@ -11,6 +11,18 @@ export const defaultConfig = {
   models: { builder: "sonnet", judge: "opus", recheck: "sonnet" },
   review: { evidence: "script", evidence_findings: "recheck", reuse_suite_run: true },
   parallel: { tickets: 1, e2e_workers: 1 },
+  validation: {
+    report: true,
+    report_scope: "ticket",
+    report_pdf: false,
+    video_walkthrough: false,
+    video_scope: "ticket",
+    video_commit: true,
+    video_max_mb: 10,
+    before_after: false,
+    traces: true,
+    changed_line_coverage: false,
+  },
 };
 
 // Reads the grouped YAML this project's workflow.yml uses: comments after
@@ -96,11 +108,54 @@ export function findProjectRoot(startPath) {
   }
 }
 
+// Checks the `validation` group's values and throws an Error naming the
+// key and the values it allows when one is wrong: the on/off keys must be
+// true or false, `report_scope` and `video_scope` must be `ticket` or
+// `item`, `video_max_mb` must be a positive whole number. Returns the config unchanged when
+// every value is valid, so a valid file behaves as before.
+export function validate(config) {
+  const group = config.validation;
+  if (typeof group !== "object" || group === null) {
+    throw new Error(
+      `workflow config: "validation" must be a group of keys, not ${JSON.stringify(group)}`,
+    );
+  }
+  for (const key of [
+    "report",
+    "report_pdf",
+    "video_walkthrough",
+    "video_commit",
+    "before_after",
+    "traces",
+    "changed_line_coverage",
+  ]) {
+    if (typeof group[key] !== "boolean") {
+      throw new Error(
+        `workflow config: validation.${key} must be true or false; got ${JSON.stringify(group[key])}`,
+      );
+    }
+  }
+  for (const key of ["report_scope", "video_scope"]) {
+    if (group[key] !== "ticket" && group[key] !== "item") {
+      throw new Error(
+        `workflow config: validation.${key} must be ticket or item; got ${JSON.stringify(group[key])}`,
+      );
+    }
+  }
+  if (!Number.isInteger(group.video_max_mb) || group.video_max_mb <= 0) {
+    throw new Error(
+      `workflow config: validation.video_max_mb must be a positive whole number; got ${JSON.stringify(group.video_max_mb)}`,
+    );
+  }
+  return config;
+}
+
 // Loads the project's workflow config: every default, overridden one
 // level deep by whatever .claude/workflow.yml under the project root
 // names. A group the project file sets (e.g. `review:`) keeps every key
 // it does not mention at its default; a missing file is not an error —
-// it means every default applies.
+// it means every default applies. Throws, naming the key, when a
+// `validation` value is not one of the allowed values (see validate).
 export function loadConfig(projectRoot) {
   const path = join(projectRoot, ".claude", "workflow.yml");
   const config = {};
@@ -122,7 +177,7 @@ export function loadConfig(projectRoot) {
       }
     }
   }
-  return config;
+  return validate(config);
 }
 
 // Reads the project's `## Conventions` section from CLAUDE.md (or

@@ -86,8 +86,8 @@ every default in the next section.
 
 ## The workflow config
 
-A file of commented keys grouped under `models:`, `review:` and
-`parallel:`, `.claude/workflow.yml`, tunes how this method, `judge` and
+A file of commented keys grouped under `models:`, `review:`, `parallel:`
+and `validation:`, `.claude/workflow.yml`, tunes how this method, `judge` and
 `implement-ticket` work in this project — `install.sh` copies a starting
 one, never over a project's own. A key a group leaves out, a group the
 file leaves out, or a missing file, takes the default below.
@@ -119,6 +119,38 @@ file leaves out, or a missing file, takes the default below.
 - `tickets` — `1` (default). `implement-ticket`'s own key; see that
   method.
 - `e2e_workers` — `1` (default). See "Parallel end to end" below.
+
+`validation` — tunes the validation report this method writes; each key
+is described in "The validation report" section. A value that is not
+allowed stops the config from loading, with an error naming the key.
+The evidence, `validation/report.json` and the screenshots, is always
+written and checked; no key turns it off. When no rendered report is due
+for a ticket (`report` is `false`, or `report_scope` is `item` and the
+ticket does not empty its item's backlog), `implement-ticket` shows a
+short summary in the chat instead. The keys:
+- `report` — `true` by default. `false`: no rendered report (HTML or
+  PDF); the evidence is still kept.
+- `report_scope` — `ticket` (default) or `item`. `ticket`: a rendered
+  report for every ticket. `item`: one for the whole item, after its
+  last ticket.
+- `report_pdf` — `false` (default). `true`: also write a PDF of each
+  rendered report, `validation/agent-report.pdf` beside the HTML.
+- `video_walkthrough` — `false` (default). `true`: record the key flow
+  as a video with chapters, embedded in the report.
+- `video_scope` — `ticket` (default) or `item`. `ticket`: every ticket's
+  report gets the video. `item`: only the ticket that empties its item's
+  backlog.
+- `video_commit` — `true` by default. `false`: keep videos git-ignored
+  instead of committed.
+- `video_max_mb` — `10` (default). A larger video is re-encoded or
+  shortened; `check-evidence.mjs` refuses it if it is still over.
+- `before_after` — `false` (default). `true`: also capture the
+  walkthrough screens on the base branch, shown side by side.
+- `traces` — `true` by default. Failed and retried tests link to their
+  Playwright trace; flaky tests are marked. `false`: no trace links.
+- `changed_line_coverage` — `false` (default). `true`: a tile with the
+  test coverage of only this ticket's changed lines; needs the
+  project's coverage tool.
 
 ## Do
 

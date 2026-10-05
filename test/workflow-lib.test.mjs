@@ -3,10 +3,11 @@
 // grouped YAML reader and loadConfig's merge. Run by test/run.sh; exits 1
 // on any failure.
 
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
-import { parseYaml, loadConfig, defaultConfig } from "../build/scripts/lib/workflow.mjs";
+import { parseYaml, loadConfig, validate, defaultConfig } from "../build/scripts/lib/workflow.mjs";
 
 let fail = 0;
 function check(condition, message) {
@@ -111,9 +112,107 @@ function check(condition, message) {
   }
 }
 
+// loadConfig on a project file: returns the config, or the error message
+// loadConfig threw.
+function loadWith(yaml) {
+  const projectRoot = mkdtempSync(join(tmpdir(), "workflow-lib-test-"));
+  try {
+    mkdirSync(join(projectRoot, ".claude"), { recursive: true });
+    writeFileSync(join(projectRoot, ".claude", "workflow.yml"), yaml);
+    try {
+      return { config: loadConfig(projectRoot) };
+    } catch (e) {
+      return { error: e.message };
+    }
+  } finally {
+    rmSync(projectRoot, { recursive: true, force: true });
+  }
+}
+
+// validation: a project file that leaves the group out gets every default.
+{
+  const { config, error } = loadWith(`models:\n  builder: opus\n`);
+  check(!error, `a file without a validation group should load; got ${error}`);
+  check(
+    config && JSON.stringify(config.validation) === JSON.stringify(defaultConfig.validation),
+    `a missing validation group should take every default; got ${JSON.stringify(config && config.validation)}`,
+  );
+}
+
+// validation: a partial group keeps the other keys at their defaults.
+{
+  const { config, error } = loadWith(`validation:\n  report: false\n  report_scope: item\n  video_walkthrough: true\n  video_max_mb: 25\n`);
+  check(!error, `a partial validation group should load; got ${error}`);
+  check(
+    config &&
+      JSON.stringify(config.validation) ===
+        JSON.stringify({ ...defaultConfig.validation, report: false, report_scope: "item", video_walkthrough: true, video_max_mb: 25 }),
+    `a partial validation group should fill the missing keys with defaults; got ${JSON.stringify(
+      config && config.validation,
+    )}`,
+  );
+}
+
+// validation: every invalid value is refused, and the error names the key.
+{
+  const bad = {
+    report: "no",
+    report_scope: "all",
+    report_pdf: "yes",
+    video_walkthrough: 1,
+    video_scope: "ticket-and-item",
+    video_commit: "false-ish",
+    video_max_mb: 0,
+    before_after: "maybe",
+    traces: 2,
+    changed_line_coverage: "on",
+  };
+  for (const [key, value] of Object.entries(bad)) {
+    const { error } = loadWith(`validation:\n  ${key}: ${value}\n`);
+    check(
+      error && error.includes(`validation.${key}`),
+      `validation.${key}: ${value} should be refused with the key named; got ${error}`,
+    );
+  }
+  for (const value of ["-5", "2.5", "big"]) {
+    const { error } = loadWith(`validation:\n  video_max_mb: ${value}\n`);
+    check(
+      error && error.includes("validation.video_max_mb") && error.includes("positive whole number"),
+      `validation.video_max_mb: ${value} should be refused, naming the allowed values; got ${error}`,
+    );
+  }
+  for (const key of ["report_scope", "video_scope"]) {
+    const { error } = loadWith(`validation:\n  ${key}: both\n`);
+    check(
+      error && error.includes(`validation.${key}`) && error.includes("ticket or item"),
+      `a bad ${key} should name the key and the allowed values; got ${error}`,
+    );
+  }
+  const { error: groupError } = loadWith(`validation: on\n`);
+  check(
+    groupError && groupError.includes("validation"),
+    `validation given as a plain value should be refused; got ${groupError}`,
+  );
+}
+
+// validate on the defaults returns the config it was given.
+{
+  check(validate(defaultConfig) === defaultConfig, "validate should accept the defaults and return the config");
+}
+
+// The shipped workflow.yml parses to exactly the defaults.
+{
+  const shipped = join(dirname(fileURLToPath(import.meta.url)), "..", "workflow.yml");
+  const parsed = parseYaml(readFileSync(shipped, "utf8"));
+  check(
+    JSON.stringify(parsed) === JSON.stringify(defaultConfig),
+    `the shipped workflow.yml should parse to exactly the defaults; got ${JSON.stringify(parsed)}`,
+  );
+}
+
 if (fail === 0) {
   console.log(
-    "PASS: parseYaml reads groups into nested objects, ignores comments and blank lines, strips quotes, types booleans and integers, and loadConfig merges a project's partial group override with every other default kept.",
+    "PASS: parseYaml reads groups into nested objects, ignores comments and blank lines, strips quotes, types booleans and integers, loadConfig merges a project's partial group override with every other default kept, the validation group fills its defaults and refuses a bad value naming the key, and the shipped workflow.yml parses to exactly the defaults.",
   );
 }
 process.exit(fail);
