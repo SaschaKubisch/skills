@@ -1,0 +1,5 @@
+validation:
+  report_scope: item
+  report_pdf: true
+  video_walkthrough: true
+  video_scope: item

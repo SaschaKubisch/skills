@@ -6,6 +6,8 @@
   "started": "2026-01-02T10:00:00Z",
   "ended": "2026-01-02T11:00:00Z",
   "ended_by": "exit conditions passed",
+  "verdict": { "builder": "ready", "reasons": ["All checks green and every step proved."], "judge": null },
+  "summary": "The second widget now appears on the page and passes an accessibility check.",
   "steps": [
     { "n": 1, "summary": "the checks pass, confirmed on a green baseline" },
     { "n": 2, "summary": "the second widget appears on the page" },
@@ -23,5 +25,8 @@
     { "file": "invariant-d1-widget-a11y", "claim": "invariant D1: the widget is accessible", "sizes": ["1280x800", "390x844"] }
   ],
   "rounds": [],
-  "diagrams": []
+  "diagrams": [],
+  "journeys": [],
+  "changes": [],
+  "problems": []
 }

@@ -1,0 +1,41 @@
+{
+  "ticket": "0001-sample",
+  "title": "Sample ticket",
+  "spec": "None yet",
+  "branch": "feat/0001-sample",
+  "started": "2026-01-01T10:00:00Z",
+  "ended": "2026-01-01T11:00:00Z",
+  "ended_by": "exit conditions passed",
+  "verdict": { "builder": "ready", "reasons": ["All checks green and every step proved."], "judge": null },
+  "summary": "The widget now appears at the top of the page and stays visible while it is active. Its condition is decided on the server.",
+  "steps": [
+    { "n": 1, "summary": "the checks pass, confirmed on a green baseline" },
+    { "n": 2, "summary": "the widget's condition, decided on the server" },
+    { "n": 3, "summary": "the widget appears at the top of the page" }
+  ],
+  "tests": [
+    { "kind": "unit", "name": "widget-condition.test", "proves": "step 2", "result": "pass", "evidence": null },
+    { "kind": "end to end", "name": "widget.spec.ts", "proves": "exit condition 4", "result": "pass", "evidence": "exit-04-widget-1280x800.png" }
+  ],
+  "not_tested": [],
+  "commands": [
+    { "command": "npm run lint", "exit_code": 0, "commit": "abc1234", "whole_suite": false },
+    { "command": "npx tsc --noEmit", "exit_code": 0, "commit": "abc1234", "whole_suite": false },
+    { "command": "npm test", "exit_code": 0, "commit": "abc1234", "whole_suite": false },
+    { "command": "npx playwright test e2e/widget.spec.ts", "exit_code": 0, "commit": "abc1234", "whole_suite": true }
+  ],
+  "screenshots": [
+    { "file": "walkthrough-01-widget", "claim": "the widget visible on the page", "sizes": ["1280x800", "390x844"] },
+    { "file": "invariant-01-widget-visible", "claim": "invariant 1: the widget stays visible", "sizes": ["1280x800", "390x844"] },
+    { "file": "exit-04-widget", "claim": "exit condition 4: the end-to-end test passes", "sizes": ["1280x800", "390x844"] }
+  ],
+  "rounds": [],
+  "diagrams": [],
+  "journeys": [
+    { "role": "visitor", "steps": [{ "n": 1, "caption": "Open the page and see the widget", "screenshot": "walkthrough-01-widget", "before": null }] }
+  ],
+  "changes": [],
+  "problems": [
+    { "problem": "The widget flickered on reload", "cause": "The condition was read on the client after the first paint of the page, so the widget appeared late, then read again on the server after the second paint of the very same page", "fix": "Read it once on the server", "commit": "abc1234" }
+  ]
+}

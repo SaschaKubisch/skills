@@ -1,8 +1,8 @@
 // lib/workflow.mjs — shared helpers for the workflow config scripts.
 // Node ESM, no dependencies.
 
-import { readFileSync, existsSync } from "node:fs";
-import { join, dirname, resolve } from "node:path";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { join, dirname, basename, resolve } from "node:path";
 
 // The defaults from the shipped workflow.yml. A project's file only needs
 // to name the groups and keys it changes; every other key takes the
@@ -178,6 +178,62 @@ export function loadConfig(projectRoot) {
     }
   }
   return validate(config);
+}
+
+// The item a ticket belongs to: its folder is
+// `items/<item>/tickets/<column>/<slug>`, <column> one of backlog,
+// in-progress, done. Returns the item's folder, or null for a ticket
+// folder that sits anywhere else (it belongs to no item).
+export function itemFolder(ticketFolder) {
+  const column = dirname(resolve(ticketFolder));
+  const tickets = dirname(column);
+  if (
+    !["backlog", "in-progress", "done"].includes(basename(column)) ||
+    basename(tickets) !== "tickets"
+  ) {
+    return null;
+  }
+  return dirname(tickets);
+}
+
+// Whether this ticket is the one that empties its item's backlog: no other
+// ticket of its item sits in `backlog/` or `in-progress/`. A ticket that
+// belongs to no item has no other ticket and counts as the last one.
+export function emptiesItemBacklog(ticketFolder) {
+  const item = itemFolder(ticketFolder);
+  if (!item) return true;
+  for (const open of ["backlog", "in-progress"]) {
+    const dir = join(item, "tickets", open);
+    if (!existsSync(dir)) continue;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory() && entry.name !== basename(resolve(ticketFolder))) return false;
+    }
+  }
+  return true;
+}
+
+// Whether a report or video whose scope key is `scope` ("ticket" or
+// "item", `validation.report_scope` or `validation.video_scope`) is due
+// for this ticket: always for `ticket`, only for the ticket that empties
+// its item's backlog for `item`.
+export function inScope(scope, ticketFolder) {
+  return scope === "ticket" || emptiesItemBacklog(ticketFolder);
+}
+
+// Where the rendered report, its PDF and the video live for a scope:
+// scope `ticket` in the ticket's own `validation/`; scope `item` in the
+// item's root `validation/`, `items/<item>/validation/`. A ticket that
+// belongs to no item keeps everything in its own `validation/`.
+export function outputDir(scope, ticketFolder) {
+  const item = itemFolder(ticketFolder);
+  return scope === "item" && item ? join(item, "validation") : join(ticketFolder, "validation");
+}
+
+// The other place the same outputs could have been put by mistake, or
+// null when the ticket belongs to no item and there is only one place.
+export function otherOutputDir(scope, ticketFolder) {
+  if (!itemFolder(ticketFolder)) return null;
+  return outputDir(scope === "item" ? "ticket" : "item", ticketFolder);
 }
 
 // Reads the project's `## Conventions` section from CLAUDE.md (or

@@ -6,6 +6,8 @@
   "started": "2026-01-01T10:00:00Z",
   "ended": "2026-01-01T11:00:00Z",
   "ended_by": "exit conditions passed",
+  "verdict": { "builder": "ready", "reasons": ["All checks green and every step proved."], "judge": null },
+  "summary": "The widget now appears at the top of the page and stays visible while it is active. Its condition is decided on the server.",
   "steps": [
     { "n": 1, "summary": "the checks pass, confirmed on a green baseline" },
     { "n": 2, "summary": "the widget's condition, decided on the server" },
@@ -28,5 +30,10 @@
     { "file": "exit-05-widget", "claim": "exit condition 4: the end-to-end test passes", "sizes": ["1280x800", "390x844"] }
   ],
   "rounds": [],
-  "diagrams": []
+  "diagrams": [],
+  "journeys": [
+    { "role": "visitor", "steps": [{ "n": 1, "caption": "Open the page and see the widget", "screenshot": "walkthrough-01-widget", "before": null }] }
+  ],
+  "changes": [],
+  "problems": []
 }

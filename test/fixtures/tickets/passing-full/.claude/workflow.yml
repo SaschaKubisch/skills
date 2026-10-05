@@ -1,0 +1,5 @@
+validation:
+  report_pdf: true
+  video_walkthrough: true
+  before_after: true
+  changed_line_coverage: true
