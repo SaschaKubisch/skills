@@ -71,6 +71,10 @@ Say what you found before the first question.
 
 > Every question to the person goes through the session's question form — in Claude Code the AskUserQuestion tool — with a header of at most 12 characters, 2–4 options, the recommended one first and marked `(Recommended)`, each with a one-line description; the person can always answer in their own words. Independent questions may share one call, at most four; a question that depends on another waits for its answer. A question with no sensible options (a name, a list of sentences) is asked as plain text. Where the session has no question form, ask the same question as text with the options numbered, one question at a time, and wait.
 
+In this skill no question goes as plain text. Every question below has
+drafted options, and the person's own words go in the form's free-text
+answer.
+
 ## Do
 
 **1. Settle which file is real.** Ask only when `CLAUDE.md` is a real file
@@ -83,10 +87,12 @@ understand".
 
 **2. Propose the description.** Only when the file has none. Draft two
 short versions of what the project is, one paragraph each, from the
-README and the manifest, and ask (see Asking), header `Project`. The
-paragraph says what the project is and who uses it. Own words go in the
-form's free-text answer. Nothing to draft from, as in an empty folder: ask
-as plain text for a sentence.
+README and the manifest, and ask (see Asking), header `Project`, with the
+two drafts as options and then "I don't understand". The paragraph says
+what the project is and who uses it. Own words go in the form's free-text
+answer. Nothing to draft from, as in an empty folder: draft one option
+from the folder's name and the files present, offer it, then "I don't
+understand"; the person writes the real sentence in the free-text answer.
 
 **3. Propose the Map.** Only when `## Map` is missing. One line per
 top-level folder, from the Look first list, hidden folders included. Each
@@ -109,10 +115,10 @@ understand". The block always holds the check script, at the path it is
 installed at:
 
 ```
-bash .claude/skills/init-agent-context/scripts/check-agent-context.sh
+bash .claude/skills/init-agent-context/scripts/check-agent-context.sh   # after editing this file
 ```
 
-The line says it runs after the file is edited.
+The comment on the line says it runs after the file is edited.
 
 **5. Propose the Conventions.** Only when `## Conventions` is missing.
 Write it in the format under Formats, the section other skills read. The
@@ -124,20 +130,25 @@ section in the question text and ask, header `Conventions`: "Use the
 Conventions as drafted? (Recommended)" / "Change them" / "I don't
 understand". Independent questions may share one call.
 
-**6. Write the files.** Create `AGENTS.md` when it does not exist, with
-a title, the description, and the sections in this order: `## Map`,
-`## Commands`, `## Conventions`. An existing file: append only the
-missing sections, in that order, after its last line, and touch no
-existing line. Create the link with `ln -s AGENTS.md CLAUDE.md`. When the
-user chose to move the text, `git mv CLAUDE.md AGENTS.md` (plain `mv` outside
-git), then link.
+**6. Write the files.** The real file is the one step 1 settled. When the
+user chose to move the text, first `git mv CLAUDE.md AGENTS.md` (plain
+`mv` when `CLAUDE.md` is not tracked or outside git). When no real file
+exists, create `AGENTS.md` with a title, the description, and the
+sections in this order: `## Map`, `## Commands`, `## Conventions`. An
+existing real file: append only the missing sections, in that order,
+after its last line, and touch no existing line. Then link the other name
+to the real file, in the same folder: `ln -s AGENTS.md CLAUDE.md`, or
+`ln -s CLAUDE.md AGENTS.md` when `CLAUDE.md` stays the real file. A link
+that already points to the real file stays.
 
-**7. Check.** Run `bash .claude/skills/init-agent-context/scripts/check-agent-context.sh`.
+**7. Check.** Run the check script at the path it is installed at, as
+`bash .claude/skills/init-agent-context/scripts/check-agent-context.sh`.
 Fix what it names, in the sections you wrote. A rule broken by text that
 was already there is reported to the user and left as it is.
 
 **8. Commit.** In a git repository, commit the files you wrote by path:
-`git commit -- AGENTS.md CLAUDE.md`, with a message that names them, for
+`git add -- AGENTS.md CLAUDE.md`, then `git commit -- AGENTS.md CLAUDE.md`
+(a new file is unknown to git until added), with a message that names them, for
 example `Add AGENTS.md and the CLAUDE.md link to it`. Not a git
 repository: say so and skip. Never `git add -A`.
 
@@ -194,7 +205,7 @@ project is `none`.
 
 ```
 <command with its flags>
-bash .claude/skills/init-agent-context/scripts/check-agent-context.sh
+bash .claude/skills/init-agent-context/scripts/check-agent-context.sh   # after editing this file
 ```
 
 ## Conventions
