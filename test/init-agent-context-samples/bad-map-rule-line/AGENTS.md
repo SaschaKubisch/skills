@@ -6,6 +6,7 @@ A small project used to test the check script.
 
 - `docs/` guides
 - `src/` code
+- Never touch `extra/` without asking.
 
 ## Commands
 
@@ -19,4 +20,3 @@ bash run.sh
 - end to end: bash run.sh
 - github project: none
 
-- Never touch `extra/` without asking.

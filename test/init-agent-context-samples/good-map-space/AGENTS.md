@@ -6,6 +6,7 @@ A small project used to test the check script.
 
 - `docs/` guides
 - `src/` code
+- `my dir/` a folder with a space; see `my dir/f`
 
 ## Commands
 
@@ -18,24 +19,3 @@ bash run.sh
 - checks (cheapest first): bash run.sh
 - end to end: bash run.sh
 - github project: none
-
-````
-```
-`no/such/path.md`
-```
-`still/not/checked.md`
-````
-
-  ```sh
-  `also/not/checked.md`
-  ```
-
-~~~
-```
-`tilde/fence/holds.md`
-~~~
-
-```
-```bash
-`info/string/does/not/close.md`
-```

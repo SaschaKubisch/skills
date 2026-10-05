@@ -20,3 +20,5 @@ bash run.sh
 - github project: none
 
 CLAUDE.md is an alias of AGENTS.md. Quote the URL `https://example.com/a/b` and `~/x/y` and `/abs/path`, `src/*.rs`, `<name>/x`, `$HOME/x`.
+
+The sample file is `src/a.txt.`

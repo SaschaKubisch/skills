@@ -7,6 +7,13 @@ A small project used to test the check script.
 - `docs/` guides
 - `src/` code
 
+````
+```
+- `extra/` in a nested fence
+```
+- `extra/` still in the outer fence
+````
+
 ## Commands
 
 ```
@@ -19,6 +26,3 @@ bash run.sh
 - end to end: bash run.sh
 - github project: none
 
-```
-- `extra/` in a fence
-```

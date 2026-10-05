@@ -19,23 +19,5 @@ bash run.sh
 - end to end: bash run.sh
 - github project: none
 
-````
-```
-`no/such/path.md`
-```
-`still/not/checked.md`
-````
-
-  ```sh
-  `also/not/checked.md`
-  ```
-
-~~~
-```
-`tilde/fence/holds.md`
-~~~
-
-```
-```bash
-`info/string/does/not/close.md`
-```
+The build is green as
+of the last release.

@@ -39,6 +39,87 @@ test_map_line_in_a_fence_does_not_count() { expect_fail bad-map-fence "^AGENTS\.
 test_map_rule_line_does_not_count() { expect_fail bad-map-rule-line "^AGENTS\.md: map: .*extra/" "${FUNCNAME[0]}"; }
 test_map_line_under_a_later_heading_does_not_count() { expect_fail bad-map-section "^AGENTS\.md: map: .*extra/" "${FUNCNAME[0]}"; }
 
+test_green_for_a_mapped_folder_whose_name_has_a_space() { expect_green good-map-space "${FUNCNAME[0]}"; }
+test_pair_two_links() { expect_fail bad-pair-both-links '^CLAUDE\.md: pair: .*both links' "${FUNCNAME[0]}"; }
+test_pair_reverse_link_to_another_file() { expect_fail bad-pair-target-reverse '^AGENTS\.md: pair: .*OTHER\.md' "${FUNCNAME[0]}"; }
+test_as_of_wrapped_over_a_line_break() { expect_fail bad-as-of-wrapped "^AGENTS\.md: date: .*as of" "${FUNCNAME[0]}"; }
+
+test_path_that_is_a_link_to_nothing() {
+  # built here, not kept as a sample: a link to nothing in test/ stops node --test test/
+  local t; t="$(mktemp -d)"
+  cp -R "$samples/good/." "$t/"
+  ln -s nowhere.md "$t/docs/link.md"; printf '\nSee `docs/link.md`.\n' >> "$t/AGENTS.md"
+  out="$(bash "$script" "$t" 2>&1)"; code=$?
+  rm -rf "$t"
+  [ "$code" -eq 1 ] && grep -q '^AGENTS\.md: path: .*docs/link\.md' <<<"$out" && ok "${FUNCNAME[0]}" || no "${FUNCNAME[0]}: exit $code: $out"
+}
+
+test_an_empty_argument_exits_2() {
+  # from inside a passing sample, so a script that falls back to the current directory would exit 0
+  out="$(cd "$samples/good" && bash "$script" "" 2>&1)"; code=$?
+  [ "$code" -eq 2 ] && ! grep -qE ': (pair|path|date|map): ' <<<"$out" && ok "${FUNCNAME[0]}" || no "${FUNCNAME[0]}: exit $code: $out"
+}
+
+test_pair_link_written_with_a_dot_slash_is_accepted() {
+  local t; t="$(mktemp -d)"
+  cp -R "$samples/good/." "$t/"
+  rm "$t/CLAUDE.md"; ln -s ./AGENTS.md "$t/CLAUDE.md"
+  out="$(bash "$script" "$t" 2>&1)"; code=$?
+  rm -rf "$t"
+  [ "$code" -eq 0 ] && ok "${FUNCNAME[0]}" || no "${FUNCNAME[0]}: exit $code: $out"
+}
+
+test_pair_real_name_that_is_a_folder() {
+  local t; t="$(mktemp -d)"
+  cp -R "$samples/good/." "$t/"
+  rm "$t/AGENTS.md"; mkdir "$t/AGENTS.md"; echo x > "$t/AGENTS.md/f"
+  out="$(bash "$script" "$t" 2>&1)"; code=$?
+  rm -rf "$t"
+  [ "$code" -eq 1 ] && grep -q '^AGENTS\.md: pair: ' <<<"$out" && ok "${FUNCNAME[0]}" || no "${FUNCNAME[0]}: exit $code: $out"
+}
+
+test_map_in_git_reads_a_folder_name_with_non_ascii_letters() {
+  local t; t="$(mktemp -d)"
+  cp -R "$samples/good/." "$t/"
+  mkdir "$t/döcs"; echo x > "$t/döcs/f"
+  awk '{print} /^- `src\/`/ {print "- `döcs/` letters outside ASCII"}' "$samples/good/AGENTS.md" > "$t/AGENTS.md"
+  git -C "$t" init -q && git -C "$t" add -A
+  out="$(bash "$script" "$t" 2>&1)"; code=$?
+  rm -rf "$t"
+  [ "$code" -eq 0 ] && ok "${FUNCNAME[0]}" || no "${FUNCNAME[0]}: exit $code: $out"
+}
+
+test_map_in_git_counts_a_submodule_as_a_folder() {
+  local t; t="$(mktemp -d)"
+  cp -R "$samples/good/." "$t/"
+  git -C "$t" init -q && git -C "$t" add -A
+  mkdir "$t/lib"
+  git -C "$t" update-index --add --cacheinfo 160000,0123456789abcdef0123456789abcdef01234567,lib
+  out="$(bash "$script" "$t" 2>&1)"; code=$?
+  rm -rf "$t"
+  [ "$code" -eq 1 ] && grep -q "map: .*'lib/'" <<<"$out" && ok "${FUNCNAME[0]}" || no "${FUNCNAME[0]}: exit $code: $out"
+}
+
+test_pair_in_git_skips_folders_git_ignores() {
+  local t; t="$(mktemp -d)"
+  cp -R "$samples/good/." "$t/"
+  mkdir -p "$t/.venv/lib/pkg"; echo '# pkg' > "$t/.venv/lib/pkg/CLAUDE.md"; echo .venv/ > "$t/.gitignore"
+  git -C "$t" init -q && git -C "$t" add -A
+  out="$(bash "$script" "$t" 2>&1)"; code=$?
+  rm -rf "$t"
+  [ "$code" -eq 0 ] && ok "${FUNCNAME[0]}" || no "${FUNCNAME[0]}: exit $code: $out"
+}
+
+test_pair_in_git_checks_a_folder_not_yet_added() {
+  local t; t="$(mktemp -d)"
+  cp -R "$samples/good/." "$t/"
+  git -C "$t" init -q && git -C "$t" add -A
+  echo '# Docs' > "$t/docs/CLAUDE.md"
+  out="$(bash "$script" "$t" 2>&1)"; code=$?
+  rm -rf "$t"
+  [ "$code" -eq 1 ] && grep -q '^docs/AGENTS\.md: pair: ' <<<"$out" && ok "${FUNCNAME[0]}" || no "${FUNCNAME[0]}: exit $code: $out"
+}
+
 test_a_missing_directory_exits_2_with_no_rule_lines() {
   # from inside a passing sample, so a script that falls back to the caller's directory would exit 0
   out="$(cd "$samples/good" && bash "$script" /nonexistent-dir-for-test 2>&1)"; code=$?
@@ -87,7 +168,7 @@ test_map_in_git_is_green_when_every_tracked_folder_has_a_line() {
 
 test_every_message_names_a_file_and_a_rule() {
   local name bad="" want
-  for name in bad-pair-plain:pair bad-pair-missing:pair bad-pair-target:pair bad-path:path bad-date:date bad-as-of:date bad-map:map bad-map-fence:map bad-map-rule-line:map bad-map-section:map; do
+  for name in bad-pair-plain:pair bad-pair-missing:pair bad-pair-target:pair bad-pair-both-links:pair bad-pair-target-reverse:pair bad-path:path bad-date:date bad-as-of:date bad-as-of-wrapped:date bad-map:map bad-map-fence:map bad-map-rule-line:map bad-map-section:map; do
     want="${name#*:}"; name="${name%%:*}"
     run "$name"
     [ "$code" -eq 1 ] || bad="$bad $name(exit $code)"
