@@ -191,6 +191,23 @@ for (const [fixture, prefix] of Object.entries(rules)) {
       rep.verdict = { ...withNotes };
     });
     check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred Conventions check should be refused; got:\n${r.err}`);
+    // A reworded exit condition (same test file, an extra flag) marked
+    // deferred is refused too.
+    r = variant((rep) => {
+      rep.commands.push({ command: "npx playwright test e2e/widget.spec.ts --reporter=line", exit_code: 1, commit: "abc1234", whole_suite: false, deferred: true });
+      rep.verdict = { ...withNotes };
+    });
+    check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred rewording of an exit condition should be refused; got:\n${r.err}`);
+    // Under feature every check and exit condition is owed a run on the
+    // final commit: one left out, or run only on an earlier commit, fails.
+    r = variant((rep) => {
+      rep.commands = rep.commands.slice(0, 1);
+    });
+    check(r.code === 1 && reports(r.err, "owed:"), `feature scope should owe a run of every exit condition; got:\n${r.err}`);
+    r = variant((rep) => {
+      rep.commands[0].commit = "0000000";
+    });
+    check(r.code === 1 && reports(r.err, "owed:"), `feature scope should owe each run on the final commit; got:\n${r.err}`);
     // Under full a deferral is not honoured: with the whole-suite run
     // recorded, the deferred failure still makes the ticket not ready.
     r = variant((rep) => {

@@ -60,8 +60,8 @@ checks, the ticket's exit conditions, and the end-to-end specs covering
 the shared files the ticket's diff touched; the whole end-to-end suite is
 never run, and a failure in a spec that neither belongs to the ticket nor
 covers a touched file is noted, not a finding. A check or an exit
-condition is never deferred; one the report marks `deferred` is a
-finding. Under `test scope: full` the
+condition is never deferred, nor is a command that runs one of their
+test files; one the report marks `deferred` is a finding. Under `test scope: full` the
 end-to-end command runs too, the same
 way, unless `review.reuse_suite_run: true` (default) and
 `validation/suite-runs.json` already records a whole-suite run — see the
