@@ -532,8 +532,11 @@ has `whole_suite: true`, on the commit it ran on — `check-evidence.mjs`'s
 whole-suite rule reads exactly this; under `feature` no command carries it
 and the rule is off. A command may carry `"deferred": true` under `feature`
 only: an unrelated failure, noted and not chased. A Conventions check or
-one of the ticket's exit conditions is never deferred; `check-evidence.mjs`
-refuses the flag on one and counts its failure. `screenshots[].sizes` names every
+one of the ticket's exit conditions is never deferred, nor is a command
+that runs one of their test files; `check-evidence.mjs` refuses the flag on
+one and counts its failure. Under `feature` every check and exit condition
+has a run on the final commit (the commit of the last command recorded);
+`check-evidence.mjs`'s owed rule reads exactly this. `screenshots[].sizes` names every
 size actually captured for that shot — every size Conventions declares
 must be among them, and each must exist as `<file>-<size>.png` under
 `validation/screenshots/`. `screenshots[].file` matches its filenames

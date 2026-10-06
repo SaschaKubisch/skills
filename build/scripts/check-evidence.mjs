@@ -56,6 +56,14 @@ function normalizeCommand(command) {
   return String(command ?? "").trim().replace(/\s+/g, " ");
 }
 
+// The test files a command names, e.g. "npx playwright test
+// e2e/widget.spec.ts --reporter=line" -> ["e2e/widget.spec.ts"].
+function testFiles(command) {
+  return words(command)
+    .map((w) => w.replace(/^["']|["']$/g, "").replace(/^\.\//, ""))
+    .filter((w) => /\.(spec|test)\.[A-Za-z]+$/.test(w));
+}
+
 function main() {
   const ticketFolder = process.argv[2];
   if (!ticketFolder) {
@@ -170,18 +178,41 @@ function main() {
     }
   }
 
-  // Rule: only an unrelated spec may be deferred. A Conventions check or
-  // one of the ticket's exit conditions marked `deferred: true` is refused,
-  // and its failure counts as a failure.
+  // The commands every ticket owes: the Conventions checks and the
+  // ticket's exit conditions, each once.
   const owed = new Set(
     [...checkCommands(conventions), ...ticket.exitConditions].map(normalizeCommand),
   );
-  const mayDefer = (c) =>
-    scope === "feature" && c.deferred === true && !owed.has(normalizeCommand(c.command));
+  const owedCommands = [...owed];
+  const owedFiles = new Set(owedCommands.flatMap(testFiles));
+
+  // Rule: under `feature` no whole-suite run backs the ticket up, so each
+  // owed command has a run on the final commit.
+  if (scope === "feature" && commands.length > 0) {
+    const finalCommit = commands[commands.length - 1].commit;
+    const ranOnFinal = new Set(
+      commands.filter((c) => c.commit === finalCommit).map((c) => normalizeCommand(c.command)),
+    );
+    for (const command of owedCommands) {
+      if (!ranOnFinal.has(normalizeCommand(command))) {
+        problems.push(
+          `owed: "${command}" is a Conventions check or one of the ticket's exit conditions, but validation/report.json's commands has no run of it on commit ${finalCommit}.`,
+        );
+      }
+    }
+  }
+
+  // Rule: only an unrelated spec may be deferred. A Conventions check or
+  // one of the ticket's exit conditions marked `deferred: true` is refused,
+  // and its failure counts as a failure. So is a command that runs a test
+  // file one of them runs, however the command is reworded.
+  const isOwed = (c) =>
+    owed.has(normalizeCommand(c.command)) || testFiles(c.command).some((f) => owedFiles.has(f));
+  const mayDefer = (c) => scope === "feature" && c.deferred === true && !isOwed(c);
   for (const c of commands) {
-    if (c.deferred === true && owed.has(normalizeCommand(c.command))) {
+    if (c.deferred === true && isOwed(c)) {
       problems.push(
-        `deferred: "${c.command}" is a Conventions check or one of the ticket's exit conditions; only an unrelated spec may be deferred.`,
+        `deferred: "${c.command}" is, or runs a test file of, a Conventions check or one of the ticket's exit conditions; only an unrelated spec may be deferred.`,
       );
     }
   }
