@@ -68,12 +68,25 @@ Codex mirror), a fixed set of bullet keys:
 - base branch: main
 - checks (cheapest first): npm run lint; npx tsc --noEmit; npm test; npm run build
 - end to end: npx playwright test
+- test scope: feature
 - screenshots: Playwright, 1280x800 and 390x844, saved per test
 - workflow config: .claude/workflow.yml
 - github project: <name, or none>
 ```
 
 `write-tickets` and `judge` read it the same way this method does.
+
+`test scope` says how much of the end-to-end suite runs. `feature` (the
+default when the key is absent): nothing in the method runs the whole
+end-to-end suite — not per step, not at the end of a ticket, not in the
+judge, not in the hand-back. Per step, run the cheap checks (every
+`checks` entry), the ticket's own exit-condition commands, and the
+end-to-end specs that cover any shared file the step touched, found by
+searching the tests for the route, component or table the changed file
+serves. A failure in a spec that neither belongs to the ticket nor covers
+a touched file is noted as deferred, not chased. `full`: every check and
+the whole end-to-end suite on every step, and the judge re-runs
+everything. The whole suite runs only under `full`.
 `write-tickets` defines every key here except `screenshots`,
 `video method` and `workflow config`, which are this method's own. The
 block above does not list `video method`: it is one more line, `- video
@@ -175,8 +188,11 @@ or the checks repaired on a red one. Nothing else in that step.
 1. Name the test after the step's `proves:` clause. One test, one claim.
 2. Write it. Run it. See it fail, and for the right reason: the thing is
    missing, not the test broken.
-3. Implement the least that makes it pass. Run the whole suite.
-4. Refactor with the suite green.
+3. Implement the least that makes it pass. Run the step's scope: under
+   `test scope: feature` (default) the cheap checks, the ticket's exit
+   conditions and the specs covering any shared file the step touched;
+   under `full` the whole suite.
+4. Refactor with that scope green.
 5. Commit: `<type>(<NNNN>): step <n>, <what the step built>`, one commit
    per step, and tick the step.
 
@@ -185,11 +201,15 @@ its claim written under Not tested in the report, with the reason. Never
 skip it silently.
 
 **4. Validate, cheapest first.** The checks from Conventions, cheapest
-first, then the end-to-end command from Conventions, then the ticket's
-exit-conditions block as it stands. All green, or stop at the first red
+first, then the ticket's exit-conditions block as it stands. Under
+`test scope: full` the whole end-to-end command from Conventions runs
+in between; under `feature` (default) it never runs whole, only the
+specs of the ticket and those covering the shared files its diff
+touched. A spec that fails and neither belongs to the ticket nor covers
+a touched file is recorded with `"deferred": true` and noted, not chased. All green, or stop at the first red
 and go back to step 3. Every command runs in the foreground with a
 timeout long enough to finish; a sleep loop that polls for a result is
-never written, here or in `judge`. Record every whole-suite run in
+never written, here or in `judge`. Under `full`, record every whole-suite run in
 `validation/suite-runs.json` — see "The whole-suite record" below.
 
 With a UI, end to end is mandatory, and three sets of shots exist before
@@ -281,10 +301,11 @@ bottom:
 
 1. **Verdict banner.** `Ready`, `Ready with notes` or `Not ready`, with at
    most 3 reasons. The builder's verdict follows fixed rules. Not ready:
-   any command of the round failed, any test failed, or the whole-suite
+   any command of the round failed (a deferred one excepted under
+   `feature`), any test failed, or, under `full`, the whole-suite
    run is missing. Ready with notes: anything is under not tested (a skipped
    PDF included), any changed module is high risk, or a flaky test was
-   retried. Ready: otherwise. When the judge ran, its verdict stands beside the builder's.
+   retried, or a failure was deferred under `feature`. Ready: otherwise. When the judge ran, its verdict stands beside the builder's.
    The judge writes its own line; the builder never writes it.
 2. **Tiles.** Steps done; tests passed and failed; invariants covered,
    the numbered ones and the design invariants `D1`, `D2`, ...; not
@@ -463,9 +484,11 @@ the start. In `tests[].proves`, a design invariant is written `D<n> of
 <spec path>`.
 
 `commands` carries every command run this round, not only the
-exit-conditions block; the one whole-suite run of the round (see step 4)
+exit-conditions block; under `test scope: full` the one whole-suite run of the round (see step 4)
 has `whole_suite: true`, on the commit it ran on — `check-evidence.mjs`'s
-whole-suite rule reads exactly this. `screenshots[].sizes` names every
+whole-suite rule reads exactly this; under `feature` no command carries it
+and the rule is off. A command may carry `"deferred": true` under `feature`
+only: an unrelated failure, noted and not chased. `screenshots[].sizes` names every
 size actually captured for that shot — every size Conventions declares
 must be among them, and each must exist as `<file>-<size>.png` under
 `validation/screenshots/`. `screenshots[].file` matches its filenames
@@ -482,7 +505,8 @@ did it.
 
 ## The whole-suite record
 
-A whole-suite run is every check from Conventions and every
+Only under `test scope: full`; under `feature` there is no such run and
+no `suite-runs.json`. A whole-suite run is every check from Conventions and every end-to-end spec and
 exit-conditions command run together, back to back, nothing failing in
 between. Append each one to `validation/suite-runs.json` — one line per
 run: the commit, the commands, the exit codes, how long it took.

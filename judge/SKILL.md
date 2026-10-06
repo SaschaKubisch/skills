@@ -1,6 +1,6 @@
 ---
 name: judge
-description: The method for checking one built ticket — run every check again, read the diff for softened tests or edited specs, read every screenshot as an image against what it claims to prove, read the report's walkthrough storyboard and video frames against the ticket's flow, then write the verdict to validation/verdict.md and report.json and append findings to PROGRESS.md as unticked judge round <n> lines for the builder. Never fixes anything. The judge agent follows it on Opus; a person can type it.
+description: The method for checking one built ticket — run the ticket's checks again (all of them under `test scope: full`), read the diff for softened tests or edited specs, read every screenshot as an image against what it claims to prove, read the report's walkthrough storyboard and video frames against the ticket's flow, then write the verdict to validation/verdict.md and report.json and append findings to PROGRESS.md as unticked judge round <n> lines for the builder. Never fixes anything. The judge agent follows it on Opus; a person can type it.
 disable-model-invocation: true
 ---
 
@@ -53,7 +53,12 @@ every line it prints is a finding, labelled `evidence` (see step 6).
 Then every command in the ticket's exit-condition block, and the checks
 from Conventions, yourself, in the worktree, comparing each exit code
 with the report's table; a claimed pass that fails here is a finding, so
-is a command the report does not list. The end-to-end command, the same
+is a command the report does not list. Under `test scope: feature` (the default in Conventions) that is all: the
+ticket's exit conditions plus the end-to-end specs covering the shared
+files the ticket's diff touched; the whole end-to-end suite is never run,
+and a failure in a spec that neither belongs to the ticket nor covers a
+touched file is noted, not a finding. Under `test scope: full` the
+end-to-end command runs too, the same
 way, unless `review.reuse_suite_run: true` (default) and
 `validation/suite-runs.json` already records a whole-suite run — see the
 build skill — for the exact commit under test; then trust that recorded

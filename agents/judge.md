@@ -1,6 +1,6 @@
 ---
 name: judge
-description: Checks one built ticket by the judge method — runs every check again, reads the diff for softened tests or edited specs, reads every screenshot against its claim, reads the walkthrough storyboard and video frames against the flow, then writes the verdict to validation/verdict.md with the findings appended to PROGRESS.md as steps. Use for validation and verification of a builder's work. Fixes nothing.
+description: Checks one built ticket by the judge method — runs the ticket's checks again (the whole end-to-end suite only under `test scope: full`), reads the diff for softened tests or edited specs, reads every screenshot against its claim, reads the walkthrough storyboard and video frames against the flow, then writes the verdict to validation/verdict.md with the findings appended to PROGRESS.md as steps. Use for validation and verification of a builder's work. Fixes nothing.
 model: opus
 ---
 

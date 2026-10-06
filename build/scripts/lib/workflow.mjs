@@ -261,6 +261,13 @@ export function readConventions(projectRoot) {
   return conventions;
 }
 
+// The project's test scope: "feature" (the default when the key is absent
+// or not recognised) or "full". See write-tickets/SKILL.md's Conventions.
+export function testScope(conventions) {
+  const value = String(conventions["test scope"] || "").trim().toLowerCase();
+  return value === "full" ? "full" : "feature";
+}
+
 // The sizes a project's `screenshots` Conventions line declares, in the
 // order written, e.g. "Playwright, 1280x800 and 390x844, saved per test"
 // -> ["1280x800", "390x844"]. The first size listed is the desktop size.

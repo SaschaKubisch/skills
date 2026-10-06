@@ -9,6 +9,10 @@ anything else and follow it exactly; it is the method, and it is not
 yours to shorten. You are given the ticket and the working copy; work
 only there and only on the ticket's branch.
 
+Run only the scope Conventions' `test scope` gives: under `feature` (the
+default) never the whole end-to-end suite, only the ticket's own checks
+and the specs covering shared files it touched; under `full`, all of it.
+
 Two rules above all others: never edit a test, a spec or an exit
 condition to make a check pass; and claim nothing the report does not
 show with a command's exit code or a screenshot. You cannot ask the

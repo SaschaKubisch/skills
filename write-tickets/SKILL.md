@@ -221,7 +221,7 @@ title; AFK or HITL; blocked by (or "nothing — can start now"); what it
 delivers, end to end; its steps; its exit conditions. If the project's
 CLAUDE.md has no `## Conventions` section, propose one in the same round
 — in the format under Conventions below — from what "Look first"
-detected (checks, end-to-end command, base branch, github project), with the defaults given there for whatever
+detected (checks, end-to-end command, base branch, test scope, github project), with the defaults given there for whatever
 detection came up empty. Print this reading checklist beside the
 breakdown, for the user to check the plan against before answering:
 
@@ -321,12 +321,20 @@ key:
 - base branch: main
 - checks (cheapest first): npm run lint; npx tsc --noEmit; npm test; npm run build
 - end to end: npx playwright test
+- test scope: feature
 - github project: <name, or none>
 ```
 
 Any implementing method can read it and add keys of its own. Defaults
-when nothing declares a key: the base branch is `main`; the GitHub
-project is none.
+when nothing declares a key: the base branch is `main`; the test scope is
+`feature`; the GitHub project is none.
+
+`test scope` is `feature` or `full`. `feature`: per step, the cheap checks,
+the ticket's exit conditions and the end-to-end specs covering the shared
+files touched; the whole end-to-end suite never runs, not per step, not at
+the end, not in the judge. `full`: every check and the whole suite on
+every step. A ticket's own steps and exit conditions are written the same
+under both.
 
 ## The ticket template
 

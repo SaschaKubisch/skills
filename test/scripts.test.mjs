@@ -64,6 +64,9 @@ const passingFixtures = [
   // item scope on the ticket that empties it: the item-wide outputs sit
   // in the item's root validation/ folder.
   "passing-item-last",
+  // no `test scope` key, so the default `feature`: the commands carry no
+  // whole-suite run and the ticket still passes.
+  "passing-feature-scope",
 ];
 
 for (const fixture of passingFixtures) {
@@ -129,6 +132,54 @@ for (const [fixture, prefix] of Object.entries(rules)) {
       !reports(err, otherPrefix),
       `check-evidence.mjs on ${fixture} should not also report "${otherPrefix}"; got:\n${err}`,
     );
+  }
+}
+
+// Test scope. `full` (fail-whole-suite) owes a whole-suite run; `feature`
+// (the default) does not, but still fails on a failed command of its own.
+{
+  const tmp = mkdtempSync(join(tmpdir(), "workflow-config-testscope-"));
+  const variant = (change) => {
+    rmSync(tmp, { recursive: true, force: true });
+    cpSync(join(fixturesDir, "passing-feature-scope"), tmp, { recursive: true });
+    const reportPath = join(tmp, "ticket", "validation", "report.json");
+    const report = JSON.parse(readFileSync(reportPath, "utf8"));
+    change(report);
+    writeFileSync(reportPath, JSON.stringify(report));
+    return run(checkEvidence, join(tmp, "ticket"));
+  };
+  try {
+    // An unrelated spec that failed and was deferred does not fail the
+    // ticket; the verdict is ready_with_notes.
+    let r = variant((rep) => {
+      rep.commands.push({ command: "npx playwright test e2e/unrelated.spec.ts", exit_code: 1, commit: "abc1234", whole_suite: false, deferred: true });
+      rep.verdict = { builder: "ready_with_notes", reasons: ["One unrelated spec failed and was deferred."], judge: null };
+    });
+    check(r.code === 0, `feature scope should not fail a ticket for a deferred unrelated spec; got:\n${r.err}`);
+    // The same failure claimed as ready is refused.
+    r = variant((rep) => {
+      rep.commands.push({ command: "npx playwright test e2e/unrelated.spec.ts", exit_code: 1, commit: "abc1234", whole_suite: false, deferred: true });
+    });
+    check(r.code === 1 && reports(r.err, "verdict:"), `a deferred failure should cap the verdict at ready_with_notes; got:\n${r.err}`);
+    // A failed command that is not deferred (an exit condition, or a spec
+    // covering a touched shared file) still fails the ticket.
+    r = variant((rep) => {
+      rep.commands.push({ command: "npx playwright test e2e/shared.spec.ts", exit_code: 1, commit: "abc1234", whole_suite: false });
+    });
+    check(r.code === 1 && reports(r.err, "verdict:"), `feature scope should still fail a command that is not deferred; got:\n${r.err}`);
+    r = variant((rep) => {
+      rep.commands[3].exit_code = 1;
+    });
+    check(r.code === 1 && reports(r.err, "verdict:"), `feature scope should still fail a failed exit-condition command; got:\n${r.err}`);
+    // Under full the same deferral is not honoured and the whole-suite run is owed.
+    r = variant((rep) => {});
+    writeFileSync(join(tmp, "CLAUDE.md"), readFileSync(join(tmp, "CLAUDE.md"), "utf8") + "");
+    const claude = join(tmp, "CLAUDE.md");
+    writeFileSync(claude, readFileSync(claude, "utf8").replace("- end to end: npx playwright test", "- end to end: npx playwright test\n- test scope: full"));
+    r = run(checkEvidence, join(tmp, "ticket"));
+    check(r.code === 1 && reports(r.err, "whole-suite:"), `test scope: full should owe a whole-suite run; got:\n${r.err}`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
   }
 }
 

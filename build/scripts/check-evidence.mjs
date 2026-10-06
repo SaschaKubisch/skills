@@ -23,6 +23,7 @@ import {
   outputDir,
   otherOutputDir,
   readConventions,
+  testScope,
   screenshotSizes,
   readTicket,
   normalizeInvariantId,
@@ -142,10 +143,14 @@ function main() {
   // Rule: a commands table without a whole-suite run on the final commit.
   // The final commit is the commit the last recorded command ran on.
   const commands = report.commands || [];
-  let hasWholeSuite = false;
+  // Under `test scope: feature` (the default) no whole-suite run is owed;
+  // the commands recorded are the checks, the exit conditions and the specs
+  // covering touched shared files. Under `full` the whole-suite run is owed.
+  const scope = testScope(conventions);
+  let hasWholeSuite = scope !== "full";
   if (commands.length === 0) {
-    problems.push("whole-suite: validation/report.json has no commands recorded.");
-  } else {
+    problems.push(`${scope === "full" ? "whole-suite" : "commands"}: validation/report.json has no commands recorded.`);
+  } else if (scope === "full") {
     const finalCommit = commands[commands.length - 1].commit;
     hasWholeSuite = commands.some(
       (c) => c.commit === finalCommit && c.whole_suite === true,
@@ -157,7 +162,7 @@ function main() {
     }
   }
 
-  checkVerdict(report, commands, hasWholeSuite, problems);
+  checkVerdict(report, commands, hasWholeSuite, scope, problems);
   checkSummary(report, problems);
   checkJourneys(report, validation, actualFiles, sizes, problems);
   checkChanges(report, problems);
@@ -178,7 +183,7 @@ function main() {
 }
 
 // Rule: the verdict is present and follows the fixed rules.
-function checkVerdict(report, commands, hasWholeSuite, problems) {
+function checkVerdict(report, commands, hasWholeSuite, scope, problems) {
   const verdict = report.verdict;
   if (!verdict || typeof verdict !== "object") {
     problems.push("verdict: validation/report.json has no verdict.");
@@ -198,7 +203,13 @@ function checkVerdict(report, commands, hasWholeSuite, problems) {
 
   let expected = "ready";
   let why = "nothing failed, nothing is not tested, no high-risk change, no retried test";
-  const failedCommand = commands.some((c) => c.exit_code !== 0);
+  // Under `feature` scope a failure marked `deferred: true` (a spec that
+  // neither belongs to the ticket nor covers a touched file) is noted, not
+  // chased: it does not fail the ticket, but it caps the verdict at
+  // ready_with_notes.
+  const isDeferred = (c) => scope === "feature" && c.deferred === true;
+  const failedCommand = commands.some((c) => c.exit_code !== 0 && !isDeferred(c));
+  const deferredFailure = commands.some((c) => c.exit_code !== 0 && isDeferred(c));
   const failedTest = (report.tests || []).some((t) => t.result === "fail");
   const pdfSkipped = isText(report.pdf && report.pdf.skipped);
   const retried = (report.traces || []).some((t) => t.retried === true);
@@ -210,14 +221,16 @@ function checkVerdict(report, commands, hasWholeSuite, problems) {
       : failedTest
         ? "a test failed"
         : "the whole-suite run is missing";
-  } else if ((report.not_tested || []).length > 0 || pdfSkipped || highRisk || retried) {
+  } else if ((report.not_tested || []).length > 0 || pdfSkipped || highRisk || retried || deferredFailure) {
     expected = "ready_with_notes";
     why =
       (report.not_tested || []).length > 0 || pdfSkipped
         ? "something is not tested"
         : highRisk
           ? "a changed module is high risk"
-          : "a test was retried";
+          : deferredFailure
+            ? "an unrelated failure was deferred"
+            : "a test was retried";
   }
   if (verdict.builder !== expected) {
     problems.push(

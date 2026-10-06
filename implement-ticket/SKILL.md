@@ -38,6 +38,10 @@ first, in rounds, before the report reaches the person.
   builder skips every step it sees ticked.
 - The verdict, with `--judge`, always lives in `validation/verdict.md`;
   there is no pull request.
+- The project's `test scope` Conventions key (`feature` by default,
+  `full`). Under `feature` this loop, its builder, its judge and its hand-back
+  never run the whole end-to-end suite; only `full` does. Pass it on
+  to both.
 - The project's workflow config (see the build skill's Conventions
   section): `.claude/workflow.yml`, or every default when it and the
   `workflow config` key are both absent. This loop reads `models`,
