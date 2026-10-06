@@ -9,7 +9,8 @@ models:
 review:
   evidence: script            # script | judge — check-evidence.mjs first, or the judge alone
   evidence_findings: recheck  # recheck | full-round — what follows a judge round whose findings are all evidence
-  reuse_suite_run: true       # the judge accepts a recorded whole-suite run for the same commit
+  # speed keys (context, step gate, prove failing first, per-ticket extras) live in Conventions, not here
+  reuse_suite_run: true       # with `test scope: full` only: the judge accepts a recorded whole-suite run for the same commit
 
 parallel:
   tickets: 1                  # >1 only with a Conventions `isolated test run` line

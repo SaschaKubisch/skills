@@ -23,6 +23,9 @@ import {
   outputDir,
   otherOutputDir,
   readConventions,
+  testScope,
+  checkCommands,
+  speedKey,
   screenshotSizes,
   readTicket,
   normalizeInvariantId,
@@ -45,6 +48,12 @@ function sentences(text) {
 
 function isText(value) {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+// A command as written, with its runs of whitespace collapsed, so the
+// report's table and the ticket's block compare equal.
+function normalizeCommand(command) {
+  return String(command ?? "").trim().replace(/\s+/g, " ");
 }
 
 function main() {
@@ -142,10 +151,14 @@ function main() {
   // Rule: a commands table without a whole-suite run on the final commit.
   // The final commit is the commit the last recorded command ran on.
   const commands = report.commands || [];
-  let hasWholeSuite = false;
+  // Under `test scope: feature` (the default) no whole-suite run is owed;
+  // the commands recorded are the checks, the exit conditions and the specs
+  // covering touched shared files. Under `full` the whole-suite run is owed.
+  const scope = testScope(conventions);
+  let hasWholeSuite = scope !== "full";
   if (commands.length === 0) {
-    problems.push("whole-suite: validation/report.json has no commands recorded.");
-  } else {
+    problems.push(`${scope === "full" ? "whole-suite" : "commands"}: validation/report.json has no commands recorded.`);
+  } else if (scope === "full") {
     const finalCommit = commands[commands.length - 1].commit;
     hasWholeSuite = commands.some(
       (c) => c.commit === finalCommit && c.whole_suite === true,
@@ -157,7 +170,29 @@ function main() {
     }
   }
 
-  checkVerdict(report, commands, hasWholeSuite, problems);
+  // Rule: only an unrelated spec may be deferred. A Conventions check or
+  // one of the ticket's exit conditions marked `deferred: true` is refused,
+  // and its failure counts as a failure.
+  const owed = new Set(
+    [...checkCommands(conventions), ...ticket.exitConditions].map(normalizeCommand),
+  );
+  const mayDefer = (c) =>
+    scope === "feature" && c.deferred === true && !owed.has(normalizeCommand(c.command));
+  for (const c of commands) {
+    if (c.deferred === true && owed.has(normalizeCommand(c.command))) {
+      problems.push(
+        `deferred: "${c.command}" is a Conventions check or one of the ticket's exit conditions; only an unrelated spec may be deferred.`,
+      );
+    }
+  }
+
+  checkProvedFailing(
+    report,
+    speedKey(conventions, "prove failing first", ["bug-fixes", "always"], "bug-fixes"),
+    ticket.kind,
+    problems,
+  );
+  checkVerdict(report, commands, hasWholeSuite, mayDefer, problems);
   checkSummary(report, problems);
   checkJourneys(report, validation, actualFiles, sizes, problems);
   checkChanges(report, problems);
@@ -177,8 +212,29 @@ function main() {
   process.exit(0);
 }
 
+// Rule: under `prove failing first: always` every test carries
+// "proved_failing": true; under `bug-fixes` (default) only a test marked
+// "bug_fix": true does, and a `Kind: fix` ticket has at least one such
+// test whatever the builder marked, so leaving `bug_fix` off is no way out.
+function checkProvedFailing(report, mode, kind, problems) {
+  const tests = report.tests || [];
+  for (const t of tests) {
+    const owed = mode === "always" || t.bug_fix === true;
+    if (owed && t.proved_failing !== true) {
+      problems.push(
+        `proved-failing: test "${t.name}" has no proof it fails against the old code (prove failing first: ${mode}).`,
+      );
+    }
+  }
+  if (kind === "fix" && !tests.some((t) => t.proved_failing === true)) {
+    problems.push(
+      "proved-failing: the ticket is Kind: fix, but no test in validation/report.json has the proof it fails against the old code.",
+    );
+  }
+}
+
 // Rule: the verdict is present and follows the fixed rules.
-function checkVerdict(report, commands, hasWholeSuite, problems) {
+function checkVerdict(report, commands, hasWholeSuite, mayDefer, problems) {
   const verdict = report.verdict;
   if (!verdict || typeof verdict !== "object") {
     problems.push("verdict: validation/report.json has no verdict.");
@@ -198,7 +254,13 @@ function checkVerdict(report, commands, hasWholeSuite, problems) {
 
   let expected = "ready";
   let why = "nothing failed, nothing is not tested, no high-risk change, no retried test";
-  const failedCommand = commands.some((c) => c.exit_code !== 0);
+  // Under `feature` scope a failure marked `deferred: true` (a spec that
+  // neither belongs to the ticket nor covers a touched file) is noted, not
+  // chased: it does not fail the ticket, but it caps the verdict at
+  // ready_with_notes. `mayDefer` refuses the flag on a check or an exit
+  // condition, and under `full`.
+  const failedCommand = commands.some((c) => c.exit_code !== 0 && !mayDefer(c));
+  const deferredFailure = commands.some((c) => c.exit_code !== 0 && mayDefer(c));
   const failedTest = (report.tests || []).some((t) => t.result === "fail");
   const pdfSkipped = isText(report.pdf && report.pdf.skipped);
   const retried = (report.traces || []).some((t) => t.retried === true);
@@ -210,14 +272,16 @@ function checkVerdict(report, commands, hasWholeSuite, problems) {
       : failedTest
         ? "a test failed"
         : "the whole-suite run is missing";
-  } else if ((report.not_tested || []).length > 0 || pdfSkipped || highRisk || retried) {
+  } else if ((report.not_tested || []).length > 0 || pdfSkipped || highRisk || retried || deferredFailure) {
     expected = "ready_with_notes";
     why =
       (report.not_tested || []).length > 0 || pdfSkipped
         ? "something is not tested"
         : highRisk
           ? "a changed module is high risk"
-          : "a test was retried";
+          : deferredFailure
+            ? "an unrelated failure was deferred"
+            : "a test was retried";
   }
   if (verdict.builder !== expected) {
     problems.push(

@@ -153,8 +153,8 @@ revisit first if that is too slow. A chain is sometimes right — each slice
 really does build on the last — but it should be a finding, not an
 accident.
 
-**4. Write each ticket's Steps** — the ordered work one run does, one
-step per iteration. Everything a step needs is already decided; where
+**4. Write each ticket's Steps** — the ordered work one run does, aiming
+for 4 to 6 steps per ticket, each a meaningful slice. Everything a step needs is already decided; where
 ordering or granularity is a judgement call, make it, say why in one
 line, and ask about it in step 6.
 
@@ -169,13 +169,18 @@ line, and ask about it in step 6.
   nothing can make the checks pass until step four, the order is wrong,
   not the check.
 - **Prefactoring next**, if this ticket is the one that carries it.
-- **A ticket that builds or changes a screen** has this as its first work
-  step after the checks-pass step: "write the design brief for this
-  ticket's screens (purpose, device, states)". Its later steps say they
-  are worked with the design method the spec names under Design.
-- **Every step is one iteration's work**: a narrow slice through every
-  layer, shown working on its own, done and verified inside one fresh
-  context window. Two iterations' worth is two steps.
+- **A ticket that builds or changes a screen** writes the design brief
+  for its screens (purpose, device, states). Under `per-ticket extras: end`
+  (default) the brief is folded into the first work step, not a step of
+  its own; under `per-step` it is its own first work step after the
+  checks-pass step. Its later steps say they are worked with the design
+  method the spec names under Design.
+- **Every step is a meaningful slice**: a narrow slice through every
+  layer, shown working on its own. Under `context: per-ticket` (default)
+  a step need not fit one fresh context window, so cut 4 to 6 steps per
+  ticket, not many tiny ones. Under `context: per-step` keep each step to
+  one iteration's work, done and verified inside one fresh context
+  window; two iterations' worth is two steps.
 - **Each test sits directly after the step that builds what it proves.**
   Not a testing phase at the end.
 - **Every "without a reload" criterion gets its own step**, verified with
@@ -221,7 +226,7 @@ title; AFK or HITL; blocked by (or "nothing — can start now"); what it
 delivers, end to end; its steps; its exit conditions. If the project's
 CLAUDE.md has no `## Conventions` section, propose one in the same round
 — in the format under Conventions below — from what "Look first"
-detected (checks, end-to-end command, base branch, github project), with the defaults given there for whatever
+detected (checks, end-to-end command, base branch, test scope, github project), with the defaults given there for whatever
 detection came up empty. Print this reading checklist beside the
 breakdown, for the user to check the plan against before answering:
 
@@ -321,12 +326,49 @@ key:
 - base branch: main
 - checks (cheapest first): npm run lint; npx tsc --noEmit; npm test; npm run build
 - end to end: npx playwright test
+- test scope: feature
+- context: per-ticket
+- step gate: changed-tests
+- prove failing first: bug-fixes
+- per-ticket extras: end
 - github project: <name, or none>
 ```
 
 Any implementing method can read it and add keys of its own. Defaults
-when nothing declares a key: the base branch is `main`; the GitHub
-project is none.
+when nothing declares a key: the base branch is `main`; the test scope is
+`feature`; `context` is `per-ticket`; `step gate` is `changed-tests`;
+`prove failing first` is `bug-fixes`; `per-ticket extras` is `end`; the GitHub project is none.
+
+`test scope` is `feature` or `full`. `feature`: the end-to-end specs that
+run are the ticket's own and those covering the shared files touched;
+when they run is `step gate`'s, below. The whole end-to-end suite never
+runs, not per step, not at the end, not in the judge. `full`: every check
+and the whole suite on every step, whatever `step gate` says. A ticket's own steps and exit conditions are written the same
+under both.
+
+Four more keys trade rigour per step for speed. The first value is the
+default; the second reproduces the older behaviour exactly.
+
+- `context: per-ticket | per-step`. `per-ticket`: one agent works all of a
+  ticket's steps as a checklist in one context. No fresh agent, no
+  re-reading of the ticket, spec or docs, and no harness smoke preflight
+  per step; the preflight runs once per run. Still one commit per step.
+  `per-step`: a fresh context per step, as before.
+- `step gate: changed-tests | ticket-tests`. `changed-tests`: per step run
+  the typecheck and only the test files the step created or changed (and,
+  under `test scope: feature`, the specs covering a shared file the step
+  touched); the ticket's whole exit-condition set runs once, at the end of
+  the ticket. `ticket-tests`: every step runs the cheap checks and the
+  ticket's exit conditions.
+- `prove failing first: bug-fixes | always`. `bug-fixes`: the proof that a
+  test fails against the old code is required only for a bug fix (a fix
+  ticket or step); tests for new features skip it. `always`: every test
+  has it.
+- `per-ticket extras: end | per-step`. `end`: the build, the screenshots
+  and evidence capture happen once per ticket, at the end, and the design
+  brief is folded into the first work step instead of being its own step.
+  `per-step`: each of these happens in every step that needs it.
+
 
 ## The ticket template
 
@@ -369,10 +411,10 @@ MAY NOT     <the negative constraint — often an invariant in one line>
 
 1. <the checks pass: walking skeleton, or the baseline confirmed or
    repaired> — proves: <the commands run green>
-2. <only when the ticket builds or changes a screen: write the design
+2. <only under `per-ticket extras: per-step` and when the ticket builds or changes a screen: write the design
    brief for this ticket's screens (purpose, device, states)> — proves:
    <the brief names purpose, device and states for every screen>
-3. <one iteration's slice, worked with the design method the spec names,
+3. <a meaningful slice, under the default folding the design brief in for a screen, worked with the design method the spec names,
    where it is a screen> — proves: <criterion or invariant, or `D<n> of
    <spec path>`>
 4. ...

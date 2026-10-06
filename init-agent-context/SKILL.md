@@ -197,11 +197,18 @@ key. Other skills read it by these keys, so the keys are written exactly:
 - base branch: main
 - checks (cheapest first): npm run lint; npx tsc --noEmit; npm test; npm run build
 - end to end: npx playwright test
+- test scope: feature
+- context: per-ticket
+- step gate: changed-tests
+- prove failing first: bug-fixes
+- per-ticket extras: end
 - github project: <name, or none>
 ```
 
-Defaults when a key is unknown: the base branch is `main`; the GitHub
-project is `none`.
+Defaults when a key is unknown: the base branch is `main`; the test scope
+is `feature` (`full` runs the whole end-to-end suite; `feature` never does);
+`context` is `per-ticket`, `step gate` is `changed-tests`, `prove failing
+first` is `bug-fixes`, `per-ticket extras` is `end`; the GitHub project is `none`.
 
 **The file.**
 
