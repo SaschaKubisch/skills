@@ -279,6 +279,14 @@ export function checkCommands(conventions) {
     .filter((c) => c.length > 0);
 }
 
+// One of the speed keys: the project's value when it is one of `allowed`,
+// else `fallback` (the fast default). Keys: "context", "step gate",
+// "prove failing first", "per-ticket extras". See write-tickets/SKILL.md.
+export function speedKey(conventions, key, allowed, fallback) {
+  const value = String(conventions[key] || "").trim().toLowerCase();
+  return allowed.includes(value) ? value : fallback;
+}
+
 // The sizes a project's `screenshots` Conventions line declares, in the
 // order written, e.g. "Playwright, 1280x800 and 390x844, saved per test"
 // -> ["1280x800", "390x844"]. The first size listed is the desktop size.

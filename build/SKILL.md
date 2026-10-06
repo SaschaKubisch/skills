@@ -69,6 +69,10 @@ Codex mirror), a fixed set of bullet keys:
 - checks (cheapest first): npm run lint; npx tsc --noEmit; npm test; npm run build
 - end to end: npx playwright test
 - test scope: feature
+- context: per-ticket
+- step gate: changed-tests
+- prove failing first: bug-fixes
+- per-ticket extras: end
 - screenshots: Playwright, 1280x800 and 390x844, saved per test
 - workflow config: .claude/workflow.yml
 - github project: <name, or none>
@@ -87,6 +91,28 @@ serves. A failure in a spec that neither belongs to the ticket nor covers
 a touched file is noted as deferred, not chased. `full`: every check and
 the whole end-to-end suite on every step, and the judge re-runs
 everything. The whole suite runs only under `full`.
+
+Four more keys trade rigour per step for speed. The first value is the
+default; the second reproduces the older behaviour exactly.
+
+- `context: per-ticket | per-step`. `per-ticket`: one agent works all of a
+  ticket's steps as a checklist in one context. No fresh agent, no
+  re-reading of the ticket, spec or docs, and no harness smoke preflight
+  per step; the preflight runs once per run. Still one commit per step.
+  `per-step`: a fresh context per step, as before.
+- `step gate: changed-tests | ticket-tests`. `changed-tests`: per step run
+  the typecheck and only the test files the step created or changed (and,
+  under `test scope: feature`, the specs covering a shared file the step
+  touched); the ticket's whole exit-condition set runs once, at the end of
+  the ticket. `ticket-tests`: every step runs the ticket's exit conditions.
+- `prove failing first: bug-fixes | always`. `bug-fixes`: the proof that a
+  test fails against the old code is required only for a bug fix (a fix
+  ticket or step); tests for new features skip it. `always`: every test
+  has it.
+- `per-ticket extras: end | per-step`. `end`: the build, the screenshots
+  and evidence capture happen once per ticket, at the end, and the design
+  brief is folded into the first work step instead of being its own step.
+  `per-step`: each of these happens in every step that needs it.
 `write-tickets` defines every key here except `screenshots`,
 `video method` and `workflow config`, which are this method's own. The
 block above does not list `video method`: it is one more line, `- video
@@ -183,15 +209,26 @@ person already prepared it.
 skeleton on an empty repository, or the baseline confirmed on a green one,
 or the checks repaired on a red one. Nothing else in that step.
 
-**3. Every step, test first.** For each unticked step, in order:
+**3. Every step, test first.** Under `context: per-ticket` (default) work
+every unticked step in this one context as a checklist: do not re-read the
+ticket, spec or docs for each step, start no fresh agent per step, and run
+no smoke preflight per step (once per run). Under `context: per-step` each
+step starts from a fresh read. For each unticked step, in order:
 
 1. Name the test after the step's `proves:` clause. One test, one claim.
 2. Write it. Run it. See it fail, and for the right reason: the thing is
-   missing, not the test broken.
-3. Implement the least that makes it pass. Run the step's scope: under
-   `test scope: feature` (default) the cheap checks, the ticket's exit
-   conditions and the specs covering any shared file the step touched;
-   under `full` the whole suite.
+   missing, not the test broken. The further proof that it also fails
+   against the old code is owed only for a bug fix under
+   `prove failing first: bug-fixes` (default), for every test under
+   `always`. Record it as `"proved_failing": true` on the test in
+   `report.json`.
+3. Implement the least that makes it pass. Run the step's gate. Under
+   `step gate: changed-tests` (default): the typecheck and only the test
+   files the step created or changed, plus, under `test scope: feature`,
+   the specs covering a shared file the step touched; the ticket's exit
+   conditions wait for the end of the ticket (step 4). Under
+   `ticket-tests`: the cheap checks and the ticket's exit conditions on
+   every step. Under `test scope: full`: the whole suite.
 4. Refactor with that scope green.
 5. Commit: `<type>(<NNNN>): step <n>, <what the step built>`, one commit
    per step, and tick the step.
@@ -230,7 +267,9 @@ every size Conventions declares:
   `exit-<NN>-<slug>`, with its shot.
 
 Capture every one of these in a single pass, right after the last code
-change of the round — never once per step. Save each shot straight into
+change of the round — never once per step. Under `per-ticket extras: end`
+(default) the build and this capture run once per ticket, at the end;
+under `per-step` they also run in each step that changes what they show. Save each shot straight into
 the ticket's `validation/screenshots/` folder as it is captured.
 
 The walkthrough shots are the report's storyboard: they are the same
@@ -484,7 +523,8 @@ the start. In `tests[].proves`, a design invariant is written `D<n> of
 <spec path>`.
 
 `commands` carries every command run this round, not only the
-exit-conditions block; under `test scope: full` the one whole-suite run of the round (see step 4)
+exit-conditions block; a test carries `"proved_failing": true` when the old-code proof was run and
+`"bug_fix": true` when it covers a bug fix; under `test scope: full` the one whole-suite run of the round (see step 4)
 has `whole_suite: true`, on the commit it ran on — `check-evidence.mjs`'s
 whole-suite rule reads exactly this; under `feature` no command carries it
 and the rule is off. A command may carry `"deferred": true` under `feature`

@@ -25,6 +25,7 @@ import {
   readConventions,
   testScope,
   checkCommands,
+  speedKey,
   screenshotSizes,
   readTicket,
   normalizeInvariantId,
@@ -185,6 +186,11 @@ function main() {
     }
   }
 
+  checkProvedFailing(
+    report,
+    speedKey(conventions, "prove failing first", ["bug-fixes", "always"], "bug-fixes"),
+    problems,
+  );
   checkVerdict(report, commands, hasWholeSuite, mayDefer, problems);
   checkSummary(report, problems);
   checkJourneys(report, validation, actualFiles, sizes, problems);
@@ -203,6 +209,20 @@ function main() {
 
   console.log(`PASS: ${basename(ticketFolder)}'s evidence matches its ticket and report.`);
   process.exit(0);
+}
+
+// Rule: under `prove failing first: always` every test carries
+// "proved_failing": true; under `bug-fixes` (default) only a test marked
+// "bug_fix": true does.
+function checkProvedFailing(report, mode, problems) {
+  for (const t of report.tests || []) {
+    const owed = mode === "always" || t.bug_fix === true;
+    if (owed && t.proved_failing !== true) {
+      problems.push(
+        `proved-failing: test "${t.name}" has no proof it fails against the old code (prove failing first: ${mode}).`,
+      );
+    }
+  }
 }
 
 // Rule: the verdict is present and follows the fixed rules.

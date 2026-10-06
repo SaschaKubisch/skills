@@ -41,7 +41,12 @@ first, in rounds, before the report reaches the person.
 - The project's `test scope` Conventions key (`feature` by default,
   `full`). Under `feature` this loop, its builder, its judge and its hand-back
   never run the whole end-to-end suite; only `full` does. Pass it on
-  to both.
+  to both. It reads the speed keys the same way: `context`, `step gate`,
+  `prove failing first` and `per-ticket extras`. Under `context: per-ticket`
+  (default) it starts the builder once for the ticket, which works every step
+  as a checklist in one context, and runs the harness smoke preflight once
+  per run, not per step; under `per-step` it starts a fresh builder context
+  per step as before.
 - The project's workflow config (see the build skill's Conventions
   section): `.claude/workflow.yml`, or every default when it and the
   `workflow config` key are both absent. This loop reads `models`,

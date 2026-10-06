@@ -207,6 +207,39 @@ for (const [fixture, prefix] of Object.entries(rules)) {
   }
 }
 
+// prove failing first: a bug-fix test needs the old-code proof under the
+// default; every test needs it under `always`.
+{
+  const tmp = mkdtempSync(join(tmpdir(), "workflow-config-prove-"));
+  const variant = (mode, change) => {
+    rmSync(tmp, { recursive: true, force: true });
+    cpSync(join(fixturesDir, "passing-feature-scope"), tmp, { recursive: true });
+    if (mode) {
+      const claude = join(tmp, "CLAUDE.md");
+      writeFileSync(claude, readFileSync(claude, "utf8").replace("- end to end: npx playwright test", `- end to end: npx playwright test\n- prove failing first: ${mode}`));
+    }
+    const reportPath = join(tmp, "ticket", "validation", "report.json");
+    const report = JSON.parse(readFileSync(reportPath, "utf8"));
+    change(report);
+    writeFileSync(reportPath, JSON.stringify(report));
+    return run(checkEvidence, join(tmp, "ticket"));
+  };
+  try {
+    let r = variant(null, () => {});
+    check(r.code === 0, `bug-fixes (default) should not ask new-feature tests for the old-code proof; got:\n${r.err}`);
+    r = variant(null, (rep) => { rep.tests[0].bug_fix = true; });
+    check(r.code === 1 && reports(r.err, "proved-failing:"), `bug-fixes should ask a bug-fix test for the proof; got:\n${r.err}`);
+    r = variant(null, (rep) => { rep.tests[0].bug_fix = true; rep.tests[0].proved_failing = true; });
+    check(r.code === 0, `a bug-fix test with the proof should pass; got:\n${r.err}`);
+    r = variant("always", () => {});
+    check(r.code === 1 && reports(r.err, "proved-failing:"), `always should ask every test for the proof; got:\n${r.err}`);
+    r = variant("always", (rep) => { rep.tests.forEach((t) => { t.proved_failing = true; }); });
+    check(r.code === 0, `always with every proof should pass; got:\n${r.err}`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 // A skipped PDF with no reason is not an excuse.
 {
   const tmp = mkdtempSync(join(tmpdir(), "workflow-config-pdf-"));

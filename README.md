@@ -163,7 +163,7 @@ base branch, its checks, how it runs end to end, how it takes
 screenshots, its workflow config, and whether a GitHub project mirrors
 its tickets. Add it once, let `init-agent-context` write it, or let
 `write-tickets` propose it the first time it runs. The `screenshots` and `workflow config` keys are the
-build method's own; `write-tickets` defines the other five:
+build method's own; `write-tickets` defines the other nine:
 
 ```
 ## Conventions
@@ -171,6 +171,10 @@ build method's own; `write-tickets` defines the other five:
 - checks (cheapest first): npm run lint; npx tsc --noEmit; npm test; npm run build
 - end to end: npx playwright test
 - test scope: feature
+- context: per-ticket
+- step gate: changed-tests
+- prove failing first: bug-fixes
+- per-ticket extras: end
 - screenshots: Playwright, 1280x800 and 390x844, saved per test
 - workflow config: .claude/workflow.yml
 - github project: <name, or none>
@@ -189,6 +193,30 @@ is built. It reads `feature` or `full`.
   unrelated spec is noted as deferred, not chased.
 - `full`: every check and the whole end-to-end suite on every step, and
   the judge re-runs everything. This is the only way the whole suite runs.
+
+#### Speed keys
+
+Four more keys trade rigour per step for speed. The first value is the
+default; the second reproduces the older behaviour exactly.
+
+- `context: per-ticket | per-step`. `per-ticket`: one agent works all of a
+  ticket's steps as a checklist in one context. No fresh agent, no
+  re-reading of the ticket, spec or docs, and no harness smoke preflight
+  per step; the preflight runs once per run. Still one commit per step.
+  `per-step`: a fresh context per step, as before.
+- `step gate: changed-tests | ticket-tests`. `changed-tests`: per step run
+  the typecheck and only the test files the step created or changed (and,
+  under `test scope: feature`, the specs covering a shared file the step
+  touched); the ticket's whole exit-condition set runs once, at the end of
+  the ticket. `ticket-tests`: every step runs the ticket's exit conditions.
+- `prove failing first: bug-fixes | always`. `bug-fixes`: the proof that a
+  test fails against the old code is required only for a bug fix (a fix
+  ticket or step); tests for new features skip it. `always`: every test
+  has it.
+- `per-ticket extras: end | per-step`. `end`: the build, the screenshots
+  and evidence capture happen once per ticket, at the end, and the design
+  brief is folded into the first work step instead of being its own step.
+  `per-step`: each of these happens in every step that needs it.
 
 If the section is missing, the skills detect what they can from the
 project (`package.json`, a `Makefile`, CI config) and write it in, so

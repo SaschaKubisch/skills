@@ -50,6 +50,8 @@ holds `ticket.md` and `validation/`.
 first (the build skill's own script, at its installed path — see its
 workflow config section for where it sits in the skills repo itself) —
 every line it prints is a finding, labelled `evidence` (see step 6).
+Under `step gate: changed-tests` the builder ran the exit conditions once, at the
+end; the judge runs them in full here either way.
 Then every command in the ticket's exit-condition block, and the checks
 from Conventions, yourself, in the worktree, comparing each exit code
 with the report's table; a claimed pass that fails here is a finding, so

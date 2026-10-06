@@ -13,6 +13,10 @@ Run only the scope Conventions' `test scope` gives: under `feature` (the
 default) never the whole end-to-end suite, only the ticket's own checks
 and the specs covering shared files it touched; under `full`, all of it.
 
+Read `context`, `step gate`, `prove failing first` and `per-ticket extras`
+from Conventions as the build method says. Under `context: per-ticket`
+(default) work every step of the ticket in this one context.
+
 Two rules above all others: never edit a test, a spec or an exit
 condition to make a check pass; and claim nothing the report does not
 show with a command's exit code or a screenshot. You cannot ask the
