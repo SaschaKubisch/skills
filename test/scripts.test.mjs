@@ -139,26 +139,32 @@ for (const [fixture, prefix] of Object.entries(rules)) {
 // (the default) does not, but still fails on a failed command of its own.
 {
   const tmp = mkdtempSync(join(tmpdir(), "workflow-config-testscope-"));
-  const variant = (change) => {
+  const variant = (change, scope) => {
     rmSync(tmp, { recursive: true, force: true });
     cpSync(join(fixturesDir, "passing-feature-scope"), tmp, { recursive: true });
+    if (scope) {
+      const claude = join(tmp, "CLAUDE.md");
+      writeFileSync(claude, readFileSync(claude, "utf8").replace("- end to end: npx playwright test", `- end to end: npx playwright test\n- test scope: ${scope}`));
+    }
     const reportPath = join(tmp, "ticket", "validation", "report.json");
     const report = JSON.parse(readFileSync(reportPath, "utf8"));
     change(report);
     writeFileSync(reportPath, JSON.stringify(report));
     return run(checkEvidence, join(tmp, "ticket"));
   };
+  const unrelated = { command: "npx playwright test e2e/unrelated.spec.ts", exit_code: 1, commit: "abc1234", whole_suite: false, deferred: true };
+  const withNotes = { builder: "ready_with_notes", reasons: ["One spec failed and was deferred."], judge: null };
   try {
     // An unrelated spec that failed and was deferred does not fail the
     // ticket; the verdict is ready_with_notes.
     let r = variant((rep) => {
-      rep.commands.push({ command: "npx playwright test e2e/unrelated.spec.ts", exit_code: 1, commit: "abc1234", whole_suite: false, deferred: true });
-      rep.verdict = { builder: "ready_with_notes", reasons: ["One unrelated spec failed and was deferred."], judge: null };
+      rep.commands.push({ ...unrelated });
+      rep.verdict = { ...withNotes };
     });
     check(r.code === 0, `feature scope should not fail a ticket for a deferred unrelated spec; got:\n${r.err}`);
     // The same failure claimed as ready is refused.
     r = variant((rep) => {
-      rep.commands.push({ command: "npx playwright test e2e/unrelated.spec.ts", exit_code: 1, commit: "abc1234", whole_suite: false, deferred: true });
+      rep.commands.push({ ...unrelated });
     });
     check(r.code === 1 && reports(r.err, "verdict:"), `a deferred failure should cap the verdict at ready_with_notes; got:\n${r.err}`);
     // A failed command that is not deferred (an exit condition, or a spec
@@ -171,12 +177,30 @@ for (const [fixture, prefix] of Object.entries(rules)) {
       rep.commands[3].exit_code = 1;
     });
     check(r.code === 1 && reports(r.err, "verdict:"), `feature scope should still fail a failed exit-condition command; got:\n${r.err}`);
-    // Under full the same deferral is not honoured and the whole-suite run is owed.
-    r = variant((rep) => {});
-    writeFileSync(join(tmp, "CLAUDE.md"), readFileSync(join(tmp, "CLAUDE.md"), "utf8") + "");
-    const claude = join(tmp, "CLAUDE.md");
-    writeFileSync(claude, readFileSync(claude, "utf8").replace("- end to end: npx playwright test", "- end to end: npx playwright test\n- test scope: full"));
-    r = run(checkEvidence, join(tmp, "ticket"));
+    // Only an unrelated spec may be deferred: an exit condition or a
+    // Conventions check marked deferred is refused and still fails.
+    r = variant((rep) => {
+      rep.commands[3].exit_code = 1;
+      rep.commands[3].deferred = true;
+      rep.verdict = { ...withNotes };
+    });
+    check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred exit condition should be refused; got:\n${r.err}`);
+    r = variant((rep) => {
+      rep.commands[0].exit_code = 1;
+      rep.commands[0].deferred = true;
+      rep.verdict = { ...withNotes };
+    });
+    check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred Conventions check should be refused; got:\n${r.err}`);
+    // Under full a deferral is not honoured: with the whole-suite run
+    // recorded, the deferred failure still makes the ticket not ready.
+    r = variant((rep) => {
+      rep.commands[3].whole_suite = true;
+      rep.commands.push({ ...unrelated });
+      rep.verdict = { ...withNotes };
+    }, "full");
+    check(r.code === 1 && reports(r.err, "verdict:") && !reports(r.err, "whole-suite:"), `test scope: full should not honour a deferral; got:\n${r.err}`);
+    // Under full the whole-suite run is owed.
+    r = variant(() => {}, "full");
     check(r.code === 1 && reports(r.err, "whole-suite:"), `test scope: full should owe a whole-suite run; got:\n${r.err}`);
   } finally {
     rmSync(tmp, { recursive: true, force: true });

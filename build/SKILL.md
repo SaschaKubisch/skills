@@ -129,8 +129,8 @@ file leaves out, or a missing file, takes the default below.
   catches evidence problems.
 - `evidence_findings` — `recheck` (default) or `full-round`. `judge`'s
   own key; see that method.
-- `reuse_suite_run` — `true` by default. See "The whole-suite record"
-  below.
+- `reuse_suite_run` — `true` by default, and read only under
+  `test scope: full`. See "The whole-suite record" below.
 
 `parallel`:
 - `tickets` — `1` (default). `implement-ticket`'s own key; see that
@@ -488,7 +488,9 @@ exit-conditions block; under `test scope: full` the one whole-suite run of the r
 has `whole_suite: true`, on the commit it ran on — `check-evidence.mjs`'s
 whole-suite rule reads exactly this; under `feature` no command carries it
 and the rule is off. A command may carry `"deferred": true` under `feature`
-only: an unrelated failure, noted and not chased. `screenshots[].sizes` names every
+only: an unrelated failure, noted and not chased. A Conventions check or
+one of the ticket's exit conditions is never deferred; `check-evidence.mjs`
+refuses the flag on one and counts its failure. `screenshots[].sizes` names every
 size actually captured for that shot — every size Conventions declares
 must be among them, and each must exist as `<file>-<size>.png` under
 `validation/screenshots/`. `screenshots[].file` matches its filenames

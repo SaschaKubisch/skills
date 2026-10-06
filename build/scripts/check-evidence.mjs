@@ -24,6 +24,7 @@ import {
   otherOutputDir,
   readConventions,
   testScope,
+  checkCommands,
   screenshotSizes,
   readTicket,
   normalizeInvariantId,
@@ -46,6 +47,12 @@ function sentences(text) {
 
 function isText(value) {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+// A command as written, with its runs of whitespace collapsed, so the
+// report's table and the ticket's block compare equal.
+function normalizeCommand(command) {
+  return String(command ?? "").trim().replace(/\s+/g, " ");
 }
 
 function main() {
@@ -162,7 +169,23 @@ function main() {
     }
   }
 
-  checkVerdict(report, commands, hasWholeSuite, scope, problems);
+  // Rule: only an unrelated spec may be deferred. A Conventions check or
+  // one of the ticket's exit conditions marked `deferred: true` is refused,
+  // and its failure counts as a failure.
+  const owed = new Set(
+    [...checkCommands(conventions), ...ticket.exitConditions].map(normalizeCommand),
+  );
+  const mayDefer = (c) =>
+    scope === "feature" && c.deferred === true && !owed.has(normalizeCommand(c.command));
+  for (const c of commands) {
+    if (c.deferred === true && owed.has(normalizeCommand(c.command))) {
+      problems.push(
+        `deferred: "${c.command}" is a Conventions check or one of the ticket's exit conditions; only an unrelated spec may be deferred.`,
+      );
+    }
+  }
+
+  checkVerdict(report, commands, hasWholeSuite, mayDefer, problems);
   checkSummary(report, problems);
   checkJourneys(report, validation, actualFiles, sizes, problems);
   checkChanges(report, problems);
@@ -183,7 +206,7 @@ function main() {
 }
 
 // Rule: the verdict is present and follows the fixed rules.
-function checkVerdict(report, commands, hasWholeSuite, scope, problems) {
+function checkVerdict(report, commands, hasWholeSuite, mayDefer, problems) {
   const verdict = report.verdict;
   if (!verdict || typeof verdict !== "object") {
     problems.push("verdict: validation/report.json has no verdict.");
@@ -206,10 +229,10 @@ function checkVerdict(report, commands, hasWholeSuite, scope, problems) {
   // Under `feature` scope a failure marked `deferred: true` (a spec that
   // neither belongs to the ticket nor covers a touched file) is noted, not
   // chased: it does not fail the ticket, but it caps the verdict at
-  // ready_with_notes.
-  const isDeferred = (c) => scope === "feature" && c.deferred === true;
-  const failedCommand = commands.some((c) => c.exit_code !== 0 && !isDeferred(c));
-  const deferredFailure = commands.some((c) => c.exit_code !== 0 && isDeferred(c));
+  // ready_with_notes. `mayDefer` refuses the flag on a check or an exit
+  // condition, and under `full`.
+  const failedCommand = commands.some((c) => c.exit_code !== 0 && !mayDefer(c));
+  const deferredFailure = commands.some((c) => c.exit_code !== 0 && mayDefer(c));
   const failedTest = (report.tests || []).some((t) => t.result === "fail");
   const pdfSkipped = isText(report.pdf && report.pdf.skipped);
   const retried = (report.traces || []).some((t) => t.retried === true);

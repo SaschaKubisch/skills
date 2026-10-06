@@ -54,10 +54,12 @@ Then every command in the ticket's exit-condition block, and the checks
 from Conventions, yourself, in the worktree, comparing each exit code
 with the report's table; a claimed pass that fails here is a finding, so
 is a command the report does not list. Under `test scope: feature` (the default in Conventions) that is all: the
-ticket's exit conditions plus the end-to-end specs covering the shared
-files the ticket's diff touched; the whole end-to-end suite is never run,
-and a failure in a spec that neither belongs to the ticket nor covers a
-touched file is noted, not a finding. Under `test scope: full` the
+checks, the ticket's exit conditions, and the end-to-end specs covering
+the shared files the ticket's diff touched; the whole end-to-end suite is
+never run, and a failure in a spec that neither belongs to the ticket nor
+covers a touched file is noted, not a finding. A check or an exit
+condition is never deferred; one the report marks `deferred` is a
+finding. Under `test scope: full` the
 end-to-end command runs too, the same
 way, unless `review.reuse_suite_run: true` (default) and
 `validation/suite-runs.json` already records a whole-suite run — see the

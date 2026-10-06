@@ -268,6 +268,17 @@ export function testScope(conventions) {
   return value === "full" ? "full" : "feature";
 }
 
+// The commands a project's `checks (cheapest first)` Conventions line
+// lists, split on ";", e.g. "npm run lint; npm test" -> ["npm run lint",
+// "npm test"].
+export function checkCommands(conventions) {
+  const line = conventions["checks (cheapest first)"] || "";
+  return line
+    .split(";")
+    .map((c) => c.trim())
+    .filter((c) => c.length > 0);
+}
+
 // The sizes a project's `screenshots` Conventions line declares, in the
 // order written, e.g. "Playwright, 1280x800 and 390x844, saved per test"
 // -> ["1280x800", "390x844"]. The first size listed is the desktop size.
@@ -276,14 +287,16 @@ export function screenshotSizes(conventions) {
   return line.match(/\d+x\d+/g) || [];
 }
 
-// Reads one ticket.md: the count of commands under its fenced Exit
-// conditions block, and the set of invariant identifiers listed under
-// its "## Invariants this touches" section.
+// Reads one ticket.md: the commands under its fenced Exit conditions
+// block and their count, and the set of invariant identifiers listed
+// under its "## Invariants this touches" section.
 export function readTicket(ticketFolder) {
   const text = readFileSync(join(ticketFolder, "ticket.md"), "utf8");
+  const exitConditions = exitConditionCommands(text);
   return {
     text,
-    exitConditionCount: countExitConditions(text),
+    exitConditions,
+    exitConditionCount: exitConditions.length,
     invariantIds: touchedInvariantIds(text),
   };
 }
@@ -297,16 +310,16 @@ function sectionBody(text, heading) {
   return (end === -1 ? rest : rest.slice(0, end)).join("\n");
 }
 
-function countExitConditions(text) {
+function exitConditionCommands(text) {
   const body = sectionBody(text, "## Exit conditions");
   const fenceStart = body.indexOf("```");
-  if (fenceStart === -1) return 0;
+  if (fenceStart === -1) return [];
   const fenceEnd = body.indexOf("```", fenceStart + 3);
   const inner = fenceEnd === -1 ? body.slice(fenceStart + 3) : body.slice(fenceStart + 3, fenceEnd);
   return inner
     .split("\n")
     .map((l) => l.trim())
-    .filter((l) => l.length > 0).length;
+    .filter((l) => l.length > 0);
 }
 
 // An invariant identifier, normalized so "D1", "d1" and "01" (when it is
