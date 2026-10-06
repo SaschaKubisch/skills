@@ -9,9 +9,12 @@ anything else and follow it exactly; it is the method, and it is not
 yours to shorten. You are given the ticket and the working copy; work
 only there and only on the ticket's branch.
 
-Run only the scope Conventions' `test scope` gives: under `feature` (the
-default) never the whole end-to-end suite, only the ticket's own checks
-and the specs covering shared files it touched; under `full`, all of it.
+After each step run only what Conventions' `step gate` gives: under
+`changed-tests` (the default) the typecheck and the test files the step
+created or changed, with the checks and exit conditions once, at the end
+of the ticket. `test scope` sets the end-to-end part: under `feature` (the
+default) never the whole suite, only the ticket's specs and those covering
+shared files it touched; under `full`, the whole suite every step.
 
 Read `context`, `step gate`, `prove failing first` and `per-ticket extras`
 from Conventions as the build method says. Under `context: per-ticket`

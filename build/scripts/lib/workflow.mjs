@@ -295,14 +295,17 @@ export function screenshotSizes(conventions) {
   return line.match(/\d+x\d+/g) || [];
 }
 
-// Reads one ticket.md: the commands under its fenced Exit conditions
-// block and their count, and the set of invariant identifiers listed
-// under its "## Invariants this touches" section.
+// Reads one ticket.md: its `Kind:` (lowercased, "" when absent), the
+// commands under its fenced Exit conditions block and their count, and
+// the set of invariant identifiers listed under its "## Invariants this
+// touches" section.
 export function readTicket(ticketFolder) {
   const text = readFileSync(join(ticketFolder, "ticket.md"), "utf8");
   const exitConditions = exitConditionCommands(text);
+  const kind = /^Kind:\s*(\S+)/m.exec(text);
   return {
     text,
+    kind: kind ? kind[1].toLowerCase() : "",
     exitConditions,
     exitConditionCount: exitConditions.length,
     invariantIds: touchedInvariantIds(text),

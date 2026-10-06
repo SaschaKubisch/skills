@@ -231,6 +231,18 @@ for (const [fixture, prefix] of Object.entries(rules)) {
     check(r.code === 1 && reports(r.err, "proved-failing:"), `bug-fixes should ask a bug-fix test for the proof; got:\n${r.err}`);
     r = variant(null, (rep) => { rep.tests[0].bug_fix = true; rep.tests[0].proved_failing = true; });
     check(r.code === 0, `a bug-fix test with the proof should pass; got:\n${r.err}`);
+    // A Kind: fix ticket owes the proof even when no test is marked bug_fix.
+    const fixTicket = () => {
+      const ticketPath = join(tmp, "ticket", "ticket.md");
+      writeFileSync(ticketPath, readFileSync(ticketPath, "utf8").replace("Kind: feat", "Kind: fix"));
+      return run(checkEvidence, join(tmp, "ticket"));
+    };
+    variant(null, () => {});
+    r = fixTicket();
+    check(r.code === 1 && reports(r.err, "proved-failing:"), `a Kind: fix ticket with no proved test should fail; got:\n${r.err}`);
+    variant(null, (rep) => { rep.tests[0].bug_fix = true; rep.tests[0].proved_failing = true; });
+    r = fixTicket();
+    check(r.code === 0, `a Kind: fix ticket with a proved test should pass; got:\n${r.err}`);
     r = variant("always", () => {});
     check(r.code === 1 && reports(r.err, "proved-failing:"), `always should ask every test for the proof; got:\n${r.err}`);
     r = variant("always", (rep) => { rep.tests.forEach((t) => { t.proved_failing = true; }); });

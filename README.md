@@ -185,14 +185,15 @@ build method's own; `write-tickets` defines the other nine:
 `test scope` limits how much of the end-to-end suite runs while a ticket
 is built. It reads `feature` or `full`.
 
-- `feature` (the default when the key is absent): per step, the cheap
-  checks, the ticket's own exit-condition commands, and the end-to-end
-  specs covering any shared file the step touched. The judge checks the
+- `feature` (the default when the key is absent): the end-to-end specs
+  that run are the ticket's own and those covering any shared file a step
+  touched; when they run is `step gate`'s, below. The judge checks the
   same. **Nothing runs the whole end-to-end suite: not per step, not once
   per ticket, not in the judge, not in the hand-back.** A failure in an
   unrelated spec is noted as deferred, not chased.
-- `full`: every check and the whole end-to-end suite on every step, and
-  the judge re-runs everything. This is the only way the whole suite runs.
+- `full`: every check and the whole end-to-end suite on every step,
+  whatever `step gate` says, and the judge re-runs everything. This is the
+  only way the whole suite runs.
 
 #### Speed keys
 
@@ -208,7 +209,8 @@ default; the second reproduces the older behaviour exactly.
   the typecheck and only the test files the step created or changed (and,
   under `test scope: feature`, the specs covering a shared file the step
   touched); the ticket's whole exit-condition set runs once, at the end of
-  the ticket. `ticket-tests`: every step runs the ticket's exit conditions.
+  the ticket. `ticket-tests`: every step runs the cheap checks and the
+  ticket's exit conditions.
 - `prove failing first: bug-fixes | always`. `bug-fixes`: the proof that a
   test fails against the old code is required only for a bug fix (a fix
   ticket or step); tests for new features skip it. `always`: every test

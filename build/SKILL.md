@@ -80,17 +80,17 @@ Codex mirror), a fixed set of bullet keys:
 
 `write-tickets` and `judge` read it the same way this method does.
 
-`test scope` says how much of the end-to-end suite runs. `feature` (the
-default when the key is absent): nothing in the method runs the whole
-end-to-end suite — not per step, not at the end of a ticket, not in the
-judge, not in the hand-back. Per step, run the cheap checks (every
-`checks` entry), the ticket's own exit-condition commands, and the
-end-to-end specs that cover any shared file the step touched, found by
-searching the tests for the route, component or table the changed file
-serves. A failure in a spec that neither belongs to the ticket nor covers
-a touched file is noted as deferred, not chased. `full`: every check and
-the whole end-to-end suite on every step, and the judge re-runs
-everything. The whole suite runs only under `full`.
+`test scope` says how much of the end-to-end suite is in play; what runs
+after each step is `step gate`'s, below. `feature` (the default when the
+key is absent): nothing in the method runs the whole end-to-end suite —
+not per step, not at the end of a ticket, not in the judge, not in the
+hand-back. The end-to-end specs that run are the ticket's own and those
+that cover any shared file a step touched, found by searching the tests
+for the route, component or table the changed file serves. A failure in
+a spec that neither belongs to the ticket nor covers a touched file is
+noted as deferred, not chased. `full`: every check and the whole
+end-to-end suite on every step, whatever `step gate` says, and the judge
+re-runs everything. The whole suite runs only under `full`.
 
 Four more keys trade rigour per step for speed. The first value is the
 default; the second reproduces the older behaviour exactly.
@@ -104,7 +104,8 @@ default; the second reproduces the older behaviour exactly.
   the typecheck and only the test files the step created or changed (and,
   under `test scope: feature`, the specs covering a shared file the step
   touched); the ticket's whole exit-condition set runs once, at the end of
-  the ticket. `ticket-tests`: every step runs the ticket's exit conditions.
+  the ticket. `ticket-tests`: every step runs the cheap checks and the
+  ticket's exit conditions.
 - `prove failing first: bug-fixes | always`. `bug-fixes`: the proof that a
   test fails against the old code is required only for a bug fix (a fix
   ticket or step); tests for new features skip it. `always`: every test
@@ -221,14 +222,16 @@ step starts from a fresh read. For each unticked step, in order:
    against the old code is owed only for a bug fix under
    `prove failing first: bug-fixes` (default), for every test under
    `always`. Record it as `"proved_failing": true` on the test in
-   `report.json`.
+   `report.json`. A `Kind: fix` ticket has at least one such test;
+   `check-evidence.mjs` reads the Kind line, not only `bug_fix`.
 3. Implement the least that makes it pass. Run the step's gate. Under
    `step gate: changed-tests` (default): the typecheck and only the test
-   files the step created or changed, plus, under `test scope: feature`,
-   the specs covering a shared file the step touched; the ticket's exit
-   conditions wait for the end of the ticket (step 4). Under
-   `ticket-tests`: the cheap checks and the ticket's exit conditions on
-   every step. Under `test scope: full`: the whole suite.
+   files the step created or changed; the other checks and the ticket's
+   exit conditions wait for the end of the ticket (step 4). Under
+   `ticket-tests`: the cheap checks and the ticket's exit conditions.
+   Then `test scope` adds the end-to-end part: under `feature` (default)
+   the specs covering any shared file the step touched; under `full` the
+   whole suite, every step, whatever the gate.
 4. Refactor with that scope green.
 5. Commit: `<type>(<NNNN>): step <n>, <what the step built>`, one commit
    per step, and tick the step.

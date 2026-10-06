@@ -189,6 +189,7 @@ function main() {
   checkProvedFailing(
     report,
     speedKey(conventions, "prove failing first", ["bug-fixes", "always"], "bug-fixes"),
+    ticket.kind,
     problems,
   );
   checkVerdict(report, commands, hasWholeSuite, mayDefer, problems);
@@ -213,15 +214,22 @@ function main() {
 
 // Rule: under `prove failing first: always` every test carries
 // "proved_failing": true; under `bug-fixes` (default) only a test marked
-// "bug_fix": true does.
-function checkProvedFailing(report, mode, problems) {
-  for (const t of report.tests || []) {
+// "bug_fix": true does, and a `Kind: fix` ticket has at least one such
+// test whatever the builder marked, so leaving `bug_fix` off is no way out.
+function checkProvedFailing(report, mode, kind, problems) {
+  const tests = report.tests || [];
+  for (const t of tests) {
     const owed = mode === "always" || t.bug_fix === true;
     if (owed && t.proved_failing !== true) {
       problems.push(
         `proved-failing: test "${t.name}" has no proof it fails against the old code (prove failing first: ${mode}).`,
       );
     }
+  }
+  if (kind === "fix" && !tests.some((t) => t.proved_failing === true)) {
+    problems.push(
+      "proved-failing: the ticket is Kind: fix, but no test in validation/report.json has the proof it fails against the old code.",
+    );
   }
 }
 

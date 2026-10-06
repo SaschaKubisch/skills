@@ -339,11 +339,11 @@ when nothing declares a key: the base branch is `main`; the test scope is
 `feature`; `context` is `per-ticket`; `step gate` is `changed-tests`;
 `prove failing first` is `bug-fixes`; `per-ticket extras` is `end`; the GitHub project is none.
 
-`test scope` is `feature` or `full`. `feature`: per step, the cheap checks,
-the ticket's exit conditions and the end-to-end specs covering the shared
-files touched; the whole end-to-end suite never runs, not per step, not at
-the end, not in the judge. `full`: every check and the whole suite on
-every step. A ticket's own steps and exit conditions are written the same
+`test scope` is `feature` or `full`. `feature`: the end-to-end specs that
+run are the ticket's own and those covering the shared files touched;
+when they run is `step gate`'s, below. The whole end-to-end suite never
+runs, not per step, not at the end, not in the judge. `full`: every check
+and the whole suite on every step, whatever `step gate` says. A ticket's own steps and exit conditions are written the same
 under both.
 
 Four more keys trade rigour per step for speed. The first value is the
@@ -358,7 +358,8 @@ default; the second reproduces the older behaviour exactly.
   the typecheck and only the test files the step created or changed (and,
   under `test scope: feature`, the specs covering a shared file the step
   touched); the ticket's whole exit-condition set runs once, at the end of
-  the ticket. `ticket-tests`: every step runs the ticket's exit conditions.
+  the ticket. `ticket-tests`: every step runs the cheap checks and the
+  ticket's exit conditions.
 - `prove failing first: bug-fixes | always`. `bug-fixes`: the proof that a
   test fails against the old code is required only for a bug fix (a fix
   ticket or step); tests for new features skip it. `always`: every test
