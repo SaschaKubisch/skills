@@ -96,7 +96,8 @@ When a video is due (`validation.video_walkthrough` `true` and in scope,
 see the build skill's "The video"), extract a frame at each chapter's
 `at_s` with `ffmpeg -ss <at_s> -i <video> -frames:v 1 <frame>.png`, or
 read the frames of each `.webm` file, and read them against the
-storyboard. A video that does not show the flow is a finding, labelled
+storyboard. The chapters come from `compose-video.mjs`, which writes them
+from the scene starts of the cut. A video that does not show the flow is a finding, labelled
 `evidence`.
 
 **4. Check coverage.** Every unticked step is a finding. Every ticked

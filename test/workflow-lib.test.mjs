@@ -181,12 +181,19 @@ function loadWith(yaml) {
       `validation.video_max_mb: ${value} should be refused, naming the allowed values; got ${error}`,
     );
   }
-  for (const key of ["report_scope", "video_scope"]) {
+  for (const [key, allowed] of [["report_scope", "ticket or item"], ["video_scope", "ticket, item or app"]]) {
     const { error } = loadWith(`validation:\n  ${key}: both\n`);
     check(
-      error && error.includes(`validation.${key}`) && error.includes("ticket or item"),
+      error && error.includes(`validation.${key}`) && error.includes(allowed),
       `a bad ${key} should name the key and the allowed values; got ${error}`,
     );
+  }
+  // `app` is a video scope only
+  {
+    const { error } = loadWith(`validation:\n  report_scope: app\n`);
+    check(error && error.includes("validation.report_scope") && error.includes("ticket or item"), `report_scope: app should be refused; got ${error}`);
+    const ok = loadWith(`validation:\n  video_scope: app\n`);
+    check(!ok.error, `video_scope: app should be accepted; got ${ok.error}`);
   }
   const { error: groupError } = loadWith(`validation: on\n`);
   check(

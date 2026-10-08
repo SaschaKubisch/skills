@@ -248,9 +248,16 @@ and the screenshots, is always written and checked. The keys:
 - `report_pdf` (`false`) — `true`: also a PDF beside each HTML report.
 - `video_walkthrough` (`false`) — `true`: record the key flow as a video
   with chapters, embedded in the report.
-- `video_scope` (`ticket`) — `ticket`: every ticket's report gets the
-  video. `item`: only the ticket that empties its item's backlog (no other
-  ticket of the item left in `backlog/` or `in-progress/`).
+  The builder follows `build/video.md` and the scripts in
+  `build/scripts/video/`: a silent warm-up run, a clean test database,
+  one recorded browser per role, then ffmpeg and Chromium compose one
+  captioned video. The project needs Playwright and, to compose, ffmpeg.
+- `video_scope` (`ticket`) — `ticket`: every ticket's report gets a
+  video of its flow. `item`: only the ticket that empties its item's
+  backlog (no other ticket of the item left in `backlog/` or
+  `in-progress/`). `app`: the same ticket and place as `item`, but the
+  video tours the whole app, from one story script the project keeps
+  and extends with each finished item.
 - `video_commit` (`true`) — `false`: keep videos git-ignored.
 - `video_max_mb` (`10`) — a larger video is re-encoded or shortened; the
   evidence check refuses it if it is still over.
