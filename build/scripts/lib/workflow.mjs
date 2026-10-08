@@ -110,8 +110,9 @@ export function findProjectRoot(startPath) {
 
 // Checks the `validation` group's values and throws an Error naming the
 // key and the values it allows when one is wrong: the on/off keys must be
-// true or false, `report_scope` and `video_scope` must be `ticket` or
-// `item`, `video_max_mb` must be a positive whole number. Returns the config unchanged when
+// true or false, `report_scope` must be `ticket` or `item`, `video_scope`
+// must be `ticket`, `item` or `app`, `video_max_mb` must be a positive
+// whole number. Returns the config unchanged when
 // every value is valid, so a valid file behaves as before.
 export function validate(config) {
   const group = config.validation;
@@ -135,10 +136,11 @@ export function validate(config) {
       );
     }
   }
-  for (const key of ["report_scope", "video_scope"]) {
-    if (group[key] !== "ticket" && group[key] !== "item") {
+  const scopes = { report_scope: ["ticket", "item"], video_scope: ["ticket", "item", "app"] };
+  for (const [key, allowed] of Object.entries(scopes)) {
+    if (!allowed.includes(group[key])) {
       throw new Error(
-        `workflow config: validation.${key} must be ticket or item; got ${JSON.stringify(group[key])}`,
+        `workflow config: validation.${key} must be ${allowed.slice(0, -1).join(", ")} or ${allowed.at(-1)}; got ${JSON.stringify(group[key])}`,
       );
     }
   }
@@ -213,27 +215,29 @@ export function emptiesItemBacklog(ticketFolder) {
 }
 
 // Whether a report or video whose scope key is `scope` ("ticket" or
-// "item", `validation.report_scope` or `validation.video_scope`) is due
-// for this ticket: always for `ticket`, only for the ticket that empties
-// its item's backlog for `item`.
+// "item", `validation.report_scope`; or "ticket", "item" or "app",
+// `validation.video_scope`) is due for this ticket: always for `ticket`,
+// only for the ticket that empties its item's backlog for `item` and
+// `app`. (`app` differs from `item` in the story the video tells, not in
+// when it is due or where it lives.)
 export function inScope(scope, ticketFolder) {
   return scope === "ticket" || emptiesItemBacklog(ticketFolder);
 }
 
 // Where the rendered report, its PDF and the video live for a scope:
-// scope `ticket` in the ticket's own `validation/`; scope `item` in the
-// item's root `validation/`, `items/<item>/validation/`. A ticket that
+// scope `ticket` in the ticket's own `validation/`; scope `item` or `app`
+// in the item's root `validation/`, `items/<item>/validation/`. A ticket that
 // belongs to no item keeps everything in its own `validation/`.
 export function outputDir(scope, ticketFolder) {
   const item = itemFolder(ticketFolder);
-  return scope === "item" && item ? join(item, "validation") : join(ticketFolder, "validation");
+  return scope !== "ticket" && item ? join(item, "validation") : join(ticketFolder, "validation");
 }
 
 // The other place the same outputs could have been put by mistake, or
 // null when the ticket belongs to no item and there is only one place.
 export function otherOutputDir(scope, ticketFolder) {
   if (!itemFolder(ticketFolder)) return null;
-  return outputDir(scope === "item" ? "ticket" : "item", ticketFolder);
+  return outputDir(scope === "ticket" ? "item" : "ticket", ticketFolder);
 }
 
 // Reads the project's `## Conventions` section from CLAUDE.md (or

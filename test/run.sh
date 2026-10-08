@@ -41,6 +41,9 @@ if [[ ! -x "$project/.claude/skills/init-agent-context/scripts/check-agent-conte
   echo "FAIL: the installed check-agent-context.sh is not executable" >&2
   fail=1
 fi
+for f in build/video.md build/scripts/video/compose-video.mjs build/scripts/video/record.mjs; do
+  check "$here/$f" "$project/.claude/skills/$f"
+done
 check "$here/LICENSE" "$project/.claude/skills/LICENSE"
 check "$here/agents/builder.md" "$project/.claude/agents/builder.md"
 check "$here/agents/judge.md" "$project/.claude/agents/judge.md"
@@ -207,5 +210,9 @@ bash "$here/test/init-agent-context.test.sh" || fail=1
 
 # the evidence and report scripts, against their fixtures
 node "$here/test/scripts.test.mjs" || fail=1
+
+# the video composer and recorder. The integration test composes a real
+# video when VIDEO_TEST_PROJECT names a project with Playwright; else it skips.
+node "$here/test/video.test.mjs" || fail=1
 
 exit "$fail"

@@ -124,9 +124,10 @@ screenshot method — then write it in, so the next ticket does not
 detect it again. Defaults when nothing declares it: a web UI gets
 Playwright at 1280x800 and 390x844; a terminal UI gets text captures; no
 UI gets command output saved as text; the video method is Playwright's
-video, combined with ffmpeg when it is installed; the base branch is `main`; the
-workflow config is `.claude/workflow.yml` if that file exists, else
-every default in the next section.
+video, composed with ffmpeg by the scripts `video.md` describes when it
+is installed; the base branch is `main`; the workflow config is
+`.claude/workflow.yml` if that file exists, else every default in the
+next section.
 
 ## The workflow config
 
@@ -182,9 +183,12 @@ the chat instead. The keys:
   rendered report, `validation/agent-report.pdf` beside the HTML.
 - `video_walkthrough` — `false` (default). `true`: record the key flow
   as a video with chapters, embedded in the report.
-- `video_scope` — `ticket` (default) or `item`. `ticket`: every ticket's
-  report gets the video. `item`: only the ticket that empties its item's
-  backlog.
+- `video_scope` — `ticket` (default), `item` or `app`. `ticket`: every
+  ticket's report gets a video of its key flow. `item`: only the ticket
+  that empties its item's backlog gets one, of the item's flows. `app`:
+  due and stored like `item`, but the video is a tour of the whole app,
+  made from one story script the project keeps and extends (see
+  `video.md`, "What the video covers").
 - `video_commit` — `true` by default. `false`: keep videos git-ignored
   instead of committed.
 - `video_max_mb` — `10` (default). A larger video is re-encoded or
@@ -396,8 +400,8 @@ The rules that run through it:
 **Where it lives, and when it is due.** Scope `ticket` (`report_scope`,
 `video_scope`): the outputs sit in the ticket's own `validation/` folder,
 `agent-report.html`, `agent-report.pdf`, `walkthrough.mp4` or the `.webm`
-files, and `screenshots/`. Scope `item`: the item-wide outputs sit in the
-item's root, `items/<item>/validation/`, and the ticket that empties its
+files, and `screenshots/`. Scope `item` (and `app`, for the video): the
+item-wide outputs sit in the item's root, `items/<item>/validation/`, and the ticket that empties its
 item's backlog produces them. A ticket empties its item's backlog when
 no other ticket of its item is left in `backlog/` or `in-progress/`.
 The per-ticket evidence, `report.json` and
@@ -420,16 +424,25 @@ headless browser it skips, writes the reason to `report.json`'s
 `pdf.skipped`, and the report shows it under Not tested.
 
 **The video.** With `validation.video_walkthrough` `true` and in scope
-(`video_scope`: `ticket` gives every ticket's report the video, `item`
-only the ticket that empties its item's backlog), the video is captured in
+(`video_scope`: `ticket` gives every ticket's report a video of its
+flow, `item` only the ticket that empties its item's backlog, `app` the
+same ticket but with a tour of the whole app), the video is captured in
 the same single pass as the screenshots, never in a second one.
 
 - One recording per role, with Playwright's video. With ffmpeg, combine
   them side by side with a caption per chapter into `walkthrough.mp4`.
   Without ffmpeg, keep one `.webm` per role and say so in the video's
   `claim`.
+- Read `video.md`, beside this file, first. It is the recipe: a silent
+  warm-up run, a clean test database, one browser per role, the
+  screenshots taken in the same recorded pass, then the checks of the
+  result. The scripts in `scripts/video/` help with the recording
+  (`record.mjs`) and do the composing (`compose-video.mjs`, which prints
+  the `chapters` for `report.json`). You write only the story.
 - Detect the method once and write it into Conventions as a `video
-  method:` line, as the screenshot method is.
+  method:` line, as the screenshot method is. Under `app`, the line also
+  names the project's one story script and its run command; extend that
+  script with the item's new flows instead of writing a new one.
 - `video_commit` `false`: add the video to `.gitignore`, at whichever of
   the two places it lives.
 - `video_max_mb`: a larger video is re-encoded or shortened first.

@@ -323,6 +323,35 @@ function withCopy(fixture, change) {
   check(reports(err, "report-html:"), `the misplaced item-scope report should be reported; got:\n${err}`);
 }
 
+// `app` is due and placed exactly like `item`: only for the ticket that
+// empties its item's backlog, in the item's root. Only the story differs.
+const setVideoScope = (tmp, scope) => {
+  const f = join(tmp, ".claude", "workflow.yml");
+  writeFileSync(f, readFileSync(f, "utf8").replace(/video_scope: \w+/, `video_scope: ${scope}`));
+};
+{
+  const { code, err } = withCopy("passing-item-last", (tmp) => setVideoScope(tmp, "app"));
+  check(code === 0, `video_scope app with the video in the item's root should pass (got ${code}):\n${err}`);
+}
+{
+  const { code, err } = withCopy("passing-item-scope", (tmp) => setVideoScope(tmp, "app"));
+  check(code === 0, `video_scope app should owe no video from a ticket that does not empty its item's backlog (got ${code}):\n${err}`);
+}
+{
+  const { code, err } = withCopy("passing-item-scope", (tmp) => {
+    setVideoScope(tmp, "app");
+    rmSync(join(tmp, "items", "alpha", "tickets", "backlog"), { recursive: true });
+  });
+  check(code === 1 && reports(err, "video:"), `the last ticket at video_scope app should owe the video (got ${code}):\n${err}`);
+}
+{
+  const { code, err } = withCopy("passing-item-last", (tmp, ticket) => {
+    setVideoScope(tmp, "app");
+    renameSync(join(tmp, "items", "alpha", "validation", "walkthrough.mp4"), join(ticket, "validation", "walkthrough.mp4"));
+  });
+  check(code === 1 && reports(err, "video-place:"), `an app-scope video in the ticket's folder should be refused (got ${code}):\n${err}`);
+}
+
 // ---- render-report.mjs and render-pdf.mjs ----
 
 // A copy of a fixture to render into, so the checked-in one stays clean.
