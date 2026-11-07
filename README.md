@@ -37,6 +37,17 @@ from a plain, interactive Claude Code session.
   path that does not exist, a date that goes stale and a folder missing
   from the Map. Typed on its own, `/init-agent-context`; not part of
   the planning or building flow.
+- **options** — turns any "give me options" into a visual choice: three
+  genuinely different options by default, one recommendation, and a
+  self-contained HTML page opened in the browser. The page shows each
+  option as graphically as the context allows: the real rendered result
+  for visual or print work, realistic screens or a built version of the
+  UI for UX questions, a diagram per option for architecture and flows,
+  and a comparison matrix at the end. The person can ask for another
+  count or for plain text. It applies nothing until the person chooses.
+  Ships `page-template.html`. Starts on its own whenever the person asks
+  for options, alternatives or versions; also typed as `/options`; not
+  part of the planning or building flow.
 - **build** — the method for working one ticket to done: a branch, one
   test per step, validation from cheapest check to end to end, and a
   visual validation report for the engineer who accepts the ticket: the
@@ -132,7 +143,7 @@ and never changes it.
 ```
 
 This copies `specify/`, `write-spec/`, `write-tickets/`,
-`init-agent-context/`, `build/`, `judge/` and `implement-ticket/` into `<project>/.claude/skills/<name>/`,
+`init-agent-context/`, `options/`, `build/`, `judge/` and `implement-ticket/` into `<project>/.claude/skills/<name>/`,
 `LICENSE` into `<project>/.claude/skills/LICENSE`,
 `agents/builder.md` and `agents/judge.md` into
 `<project>/.claude/agents/`, and the default `workflow.yml` into
@@ -149,8 +160,9 @@ Without the script, copy the same folders by hand into the same places.
 ```
 
 This copies only the three planning skills `specify/`, `write-spec/` and
-`write-tickets/`, plus `init-agent-context/` and `LICENSE`. It copies no
-agents and no `workflow.yml`: none of these four skills reads them. Work
+`write-tickets/`, plus `init-agent-context/`, `options/` and `LICENSE`. It
+copies no agents and no `workflow.yml`: none of these five skills reads
+them. Work
 the tickets by any method: the exit
 conditions under `## Exit conditions` decide done, and the ready gate
 described in `write-tickets` decides when a ticket may start.
