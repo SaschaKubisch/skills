@@ -76,9 +76,17 @@ log "run $slug: worktree $wt, branch $branch"
 ex=$(git rev-parse --git-path info/exclude); mkdir -p "$(dirname "$ex")"
 grep -qx PROGRESS.md "$ex" 2>/dev/null || echo PROGRESS.md >> "$ex"
 
+# 6. Protected paths, read-only to the worker: the ticket file, the spec its
+# Parent: line names, and each --protect path. A mode stops a plain append; it
+# does not stop a worker that changes the mode or replaces the file (SKILL.md).
+spec=$(sed -n 's/^Parent: *//p' "$dir/ticket.md" | head -1 | tr -d '`'); spec=${spec%%,*}
+printf '%s\n' "$dir/ticket.md" "$spec" "$protect" | while IFS= read -r p; do
+  [ -n "$p" ] && [ -e "$p" ] && chmod -R a-w "$p"
+done
+
 # 7. The loop. Each iteration: a fresh worker, then the completion conditions.
-# The circuit breaker: a run of $strikes iterations with no new commit, or a
-# PROGRESS.md that lost a box line or lost a tick, stops the run at once.
+# The circuit breaker: $strikes iterations in a row with no new commit, or a
+# PROGRESS.md that lost a box line or a tick, stops the run.
 boxes() { cat PROGRESS.md 2>/dev/null | grep -c '^- \[[ x]\] '; }
 n=0; strike=0; status=turn-limit
 while [ "$n" -lt "$limit" ]; do
