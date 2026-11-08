@@ -65,7 +65,8 @@ const passingFixtures = [
   // in the item's root validation/ folder.
   "passing-item-last",
   // no `test scope` key, so the default `feature`: the commands carry no
-  // whole-suite run and the ticket still passes.
+  // whole-suite run and the ticket still passes. Its ticket still has the
+  // old "## Exit conditions" section, which check-evidence.mjs still reads.
   "passing-feature-scope",
 ];
 
@@ -73,6 +74,16 @@ for (const fixture of passingFixtures) {
   const { code, out, err } = run(checkEvidence, ticketDir(fixture));
   check(code === 0, `check-evidence.mjs should exit 0 on ${fixture} (got ${code}):\n${err}`);
   check(out.includes("PASS"), `check-evidence.mjs should print PASS on ${fixture}`);
+}
+
+// The fixtures hold both headings: the new "## Completion conditions" in
+// "passing", and the old "## Exit conditions" in "passing-feature-scope",
+// which stands for a finished ticket that keeps the heading it was written
+// with. The owed-command checks below read that old section.
+{
+  const heading = (fixture, text) => readFileSync(join(ticketDir(fixture), "ticket.md"), "utf8").split("\n").includes(text);
+  check(heading("passing", "## Completion conditions") && !heading("passing", "## Exit conditions"), "the passing fixture should have the new ## Completion conditions section only");
+  check(heading("passing-feature-scope", "## Exit conditions") && !heading("passing-feature-scope", "## Completion conditions"), "the passing-feature-scope fixture should keep the old ## Exit conditions section only");
 }
 
 // Each failing fixture exits 1 and names its own rule, no other.

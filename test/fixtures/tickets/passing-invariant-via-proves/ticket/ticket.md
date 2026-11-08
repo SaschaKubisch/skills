@@ -22,7 +22,7 @@ A second widget appears on the page, and it is accessible.
 2. the widget on the page — proves: settled line 2
 3. an accessibility pass for the widget — proves: D1 of specs/design.md
 
-## Exit conditions
+## Completion conditions
 
 ```
 npm run lint

@@ -14,7 +14,7 @@ A widget appears on the page.
 
 ## Invariants this touches
 
-- 1. The widget is always visible when active, checked by exit condition 4.
+- 1. The widget is always visible when active, checked by completion condition 4.
 
 ## Steps
 
@@ -22,7 +22,7 @@ A widget appears on the page.
 2. the widget's condition — proves: settled line 1
 3. the widget on the page — proves: settled line 2
 
-## Exit conditions
+## Completion conditions
 
 ```
 npm run lint
