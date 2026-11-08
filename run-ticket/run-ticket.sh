@@ -77,9 +77,13 @@ ex=$(git rev-parse --git-path info/exclude); mkdir -p "$(dirname "$ex")"
 grep -qx PROGRESS.md "$ex" 2>/dev/null || echo PROGRESS.md >> "$ex"
 
 # 7. The loop. Each iteration: a fresh worker, then the completion conditions.
-n=0; status=turn-limit
+# The circuit breaker: a run of $strikes iterations with no new commit, or a
+# PROGRESS.md that lost a box line or lost a tick, stops the run at once.
+boxes() { cat PROGRESS.md 2>/dev/null | grep -c '^- \[[ x]\] '; }
+n=0; strike=0; status=turn-limit
 while [ "$n" -lt "$limit" ]; do
   n=$((n + 1))
+  before=$(git rev-list --count "$start"..HEAD); nboxes=$(boxes); ticked=$(grep '^- \[x\] ' PROGRESS.md)
   { cat "$here/prompt.md"; echo; echo "The ticket file is $dir/ticket.md."; } |
     RUN_TICKET_ITERATION=$n RUN_TICKET_FILE=$dir/ticket.md bash -c "$worker" > "$run/iter-$n-worker.log" 2>&1
   log "iteration $n: the worker exited with code $?"
@@ -91,6 +95,13 @@ while [ "$n" -lt "$limit" ]; do
   done <<<"$conds"
   log "iteration $n: $fails completion condition(s) fail"
   [ "$fails" -eq 0 ] && { status=passed; break; }
+  if [ "$(git rev-list --count "$start"..HEAD)" -gt "$before" ]; then strike=0; else strike=$((strike + 1)); fi
+  lost=0; [ "$(boxes)" -ge "$nboxes" ] || lost=1
+  while IFS= read -r l; do
+    [ -z "$l" ] || grep -qxF -- "$l" PROGRESS.md 2>/dev/null || lost=1
+  done <<<"$ticked"
+  [ "$lost" -eq 0 ] || { status=circuit-breaker-progress-file; break; }
+  [ "$strike" -lt "$strikes" ] || { status=circuit-breaker-no-progress; break; }
 done
 
 # 8. Stop: write the evidence, print where everything is, exit with the status code.
