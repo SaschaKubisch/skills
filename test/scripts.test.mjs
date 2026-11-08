@@ -135,6 +135,19 @@ for (const [fixture, prefix] of Object.entries(rules)) {
   }
 }
 
+// The exit-evidence rule keeps its label and the exit-NN- screenshot prefix
+// (finished tickets keep files with that prefix); its message uses the
+// completion wording. This fixture's ticket has four commands under
+// "## Completion conditions" and a screenshot named exit-05-.
+{
+  const { err } = runFixture("fail-exit-evidence");
+  const line = err.split("\n").find((l) => l.startsWith("exit-evidence:")) || "";
+  check(
+    line.includes("names completion condition 5") && line.includes("the ticket's Completion conditions block has 4 command(s)."),
+    `the exit-evidence message should use the completion wording; got: ${line}`,
+  );
+}
+
 // Test scope. `full` (fail-whole-suite) owes a whole-suite run; `feature`
 // (the default) does not, but still fails on a failed command of its own.
 {
@@ -167,7 +180,7 @@ for (const [fixture, prefix] of Object.entries(rules)) {
       rep.commands.push({ ...unrelated });
     });
     check(r.code === 1 && reports(r.err, "verdict:"), `a deferred failure should cap the verdict at ready_with_notes; got:\n${r.err}`);
-    // A failed command that is not deferred (an exit condition, or a spec
+    // A failed command that is not deferred (a completion condition, or a spec
     // covering a touched shared file) still fails the ticket.
     r = variant((rep) => {
       rep.commands.push({ command: "npx playwright test e2e/shared.spec.ts", exit_code: 1, commit: "abc1234", whole_suite: false });
@@ -176,34 +189,40 @@ for (const [fixture, prefix] of Object.entries(rules)) {
     r = variant((rep) => {
       rep.commands[3].exit_code = 1;
     });
-    check(r.code === 1 && reports(r.err, "verdict:"), `feature scope should still fail a failed exit-condition command; got:\n${r.err}`);
-    // Only an unrelated spec may be deferred: an exit condition or a
+    check(r.code === 1 && reports(r.err, "verdict:"), `feature scope should still fail a failed completion-condition command; got:\n${r.err}`);
+    // Only an unrelated spec may be deferred: a completion condition or a
     // Conventions check marked deferred is refused and still fails.
     r = variant((rep) => {
       rep.commands[3].exit_code = 1;
       rep.commands[3].deferred = true;
       rep.verdict = { ...withNotes };
     });
-    check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred exit condition should be refused; got:\n${r.err}`);
+    check(
+      r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:") && r.err.includes("one of the ticket's completion conditions"),
+      `a deferred completion condition should be refused; got:\n${r.err}`,
+    );
     r = variant((rep) => {
       rep.commands[0].exit_code = 1;
       rep.commands[0].deferred = true;
       rep.verdict = { ...withNotes };
     });
     check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred Conventions check should be refused; got:\n${r.err}`);
-    // A reworded exit condition (same test file, an extra flag) marked
+    // A reworded completion condition (same test file, an extra flag) marked
     // deferred is refused too.
     r = variant((rep) => {
       rep.commands.push({ command: "npx playwright test e2e/widget.spec.ts --reporter=line", exit_code: 1, commit: "abc1234", whole_suite: false, deferred: true });
       rep.verdict = { ...withNotes };
     });
-    check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred rewording of an exit condition should be refused; got:\n${r.err}`);
-    // Under feature every check and exit condition is owed a run on the
+    check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred rewording of a completion condition should be refused; got:\n${r.err}`);
+    // Under feature every check and completion condition is owed a run on the
     // final commit: one left out, or run only on an earlier commit, fails.
     r = variant((rep) => {
       rep.commands = rep.commands.slice(0, 1);
     });
-    check(r.code === 1 && reports(r.err, "owed:"), `feature scope should owe a run of every exit condition; got:\n${r.err}`);
+    check(
+      r.code === 1 && reports(r.err, "owed:") && r.err.includes("one of the ticket's completion conditions"),
+      `feature scope should owe a run of every completion condition; got:\n${r.err}`,
+    );
     r = variant((rep) => {
       rep.commands[0].commit = "0000000";
     });

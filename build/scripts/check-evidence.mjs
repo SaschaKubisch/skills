@@ -4,7 +4,7 @@
 //
 //   node build/scripts/check-evidence.mjs <ticket-folder>
 //
-// Reads validation/report.json, the ticket's Exit conditions and
+// Reads validation/report.json, the ticket's Completion conditions and
 // Invariants this touches, the project's Conventions screenshot sizes and
 // the project's workflow config (.claude/workflow.yml, or every default).
 // Prints one line per problem, "<rule>: <message>", and exits 1; prints
@@ -103,14 +103,16 @@ function main() {
   const screenshotsDir = join(ticketFolder, "validation", "screenshots");
   const actualFiles = existsSync(screenshotsDir) ? readdirSync(screenshotsDir) : [];
 
-  // Rule: an exit-NN-* screenshot with no exit condition NN.
+  // Rule: an exit-NN-* screenshot with no completion condition NN. The
+  // prefix and the "exit-evidence" label are data formats: finished
+  // tickets keep screenshots named exit-NN-*.
   for (const file of actualFiles) {
     const m = /^exit-(\d+)-/.exec(file);
     if (!m) continue;
     const n = Number(m[1]);
-    if (n < 1 || n > ticket.exitConditionCount) {
+    if (n < 1 || n > ticket.completionConditionCount) {
       problems.push(
-        `exit-evidence: ${file} names exit condition ${n}, but the ticket's Exit conditions block has ${ticket.exitConditionCount} command(s).`,
+        `exit-evidence: ${file} names completion condition ${n}, but the ticket's Completion conditions block has ${ticket.completionConditionCount} command(s).`,
       );
     }
   }
@@ -160,7 +162,7 @@ function main() {
   // The final commit is the commit the last recorded command ran on.
   const commands = report.commands || [];
   // Under `test scope: feature` (the default) no whole-suite run is owed;
-  // the commands recorded are the checks, the exit conditions and the specs
+  // the commands recorded are the checks, the completion conditions and the specs
   // covering touched shared files. Under `full` the whole-suite run is owed.
   const scope = testScope(conventions);
   let hasWholeSuite = scope !== "full";
@@ -179,9 +181,9 @@ function main() {
   }
 
   // The commands every ticket owes: the Conventions checks and the
-  // ticket's exit conditions, each once.
+  // ticket's completion conditions, each once.
   const owed = new Set(
-    [...checkCommands(conventions), ...ticket.exitConditions].map(normalizeCommand),
+    [...checkCommands(conventions), ...ticket.completionConditions].map(normalizeCommand),
   );
   const owedCommands = [...owed];
   const owedFiles = new Set(owedCommands.flatMap(testFiles));
@@ -196,14 +198,14 @@ function main() {
     for (const command of owedCommands) {
       if (!ranOnFinal.has(normalizeCommand(command))) {
         problems.push(
-          `owed: "${command}" is a Conventions check or one of the ticket's exit conditions, but validation/report.json's commands has no run of it on commit ${finalCommit}.`,
+          `owed: "${command}" is a Conventions check or one of the ticket's completion conditions, but validation/report.json's commands has no run of it on commit ${finalCommit}.`,
         );
       }
     }
   }
 
   // Rule: only an unrelated spec may be deferred. A Conventions check or
-  // one of the ticket's exit conditions marked `deferred: true` is refused,
+  // one of the ticket's completion conditions marked `deferred: true` is refused,
   // and its failure counts as a failure. So is a command that runs a test
   // file one of them runs, however the command is reworded.
   const isOwed = (c) =>
@@ -212,7 +214,7 @@ function main() {
   for (const c of commands) {
     if (c.deferred === true && isOwed(c)) {
       problems.push(
-        `deferred: "${c.command}" is, or runs a test file of, a Conventions check or one of the ticket's exit conditions; only an unrelated spec may be deferred.`,
+        `deferred: "${c.command}" is, or runs a test file of, a Conventions check or one of the ticket's completion conditions; only an unrelated spec may be deferred.`,
       );
     }
   }
@@ -288,7 +290,7 @@ function checkVerdict(report, commands, hasWholeSuite, mayDefer, problems) {
   // Under `feature` scope a failure marked `deferred: true` (a spec that
   // neither belongs to the ticket nor covers a touched file) is noted, not
   // chased: it does not fail the ticket, but it caps the verdict at
-  // ready_with_notes. `mayDefer` refuses the flag on a check or an exit
+  // ready_with_notes. `mayDefer` refuses the flag on a check or a completion
   // condition, and under `full`.
   const failedCommand = commands.some((c) => c.exit_code !== 0 && !mayDefer(c));
   const deferredFailure = commands.some((c) => c.exit_code !== 0 && mayDefer(c));

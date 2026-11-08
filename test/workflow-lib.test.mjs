@@ -7,7 +7,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "nod
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
-import { parseYaml, loadConfig, validate, defaultConfig } from "../build/scripts/lib/workflow.mjs";
+import { parseYaml, loadConfig, validate, defaultConfig, readTicket } from "../build/scripts/lib/workflow.mjs";
 
 let fail = 0;
 function check(condition, message) {
@@ -217,9 +217,70 @@ function loadWith(yaml) {
   );
 }
 
+// readTicket reads the commands under a ticket's `## Completion conditions`
+// section, and, when that section is absent, under the older `## Exit
+// conditions` heading that finished tickets keep.
+function ticketFolder(sections) {
+  const dir = mkdtempSync(join(tmpdir(), "workflow-lib-ticket-"));
+  writeFileSync(
+    join(dir, "ticket.md"),
+    `# 0001 - Sample\n\nSummary: A sample.\nKind: feat\n\n${sections}\n## Blocked by\n\nNothing.\n`,
+  );
+  return dir;
+}
+const commandBlock = (heading, ...commands) => `## ${heading}\n\n\`\`\`\n${commands.join("\n")}\n\`\`\`\n\n`;
+
+// A ticket with `## Completion conditions` has its commands read.
+{
+  const dir = ticketFolder(commandBlock("Completion conditions", "npm test", "npm run lint"));
+  const t = readTicket(dir);
+  check(
+    JSON.stringify(t.completionConditions) === JSON.stringify(["npm test", "npm run lint"]) &&
+      t.completionConditionCount === 2,
+    `a ticket with ## Completion conditions should have its two commands read; got ${JSON.stringify(t.completionConditions)} (${t.completionConditionCount})`,
+  );
+  rmSync(dir, { recursive: true, force: true });
+}
+
+// A ticket that still has the old `## Exit conditions` section is read too.
+{
+  const dir = ticketFolder(commandBlock("Exit conditions", "npm test", "npm run lint", "npm run build"));
+  const t = readTicket(dir);
+  check(
+    JSON.stringify(t.completionConditions) === JSON.stringify(["npm test", "npm run lint", "npm run build"]) &&
+      t.completionConditionCount === 3,
+    `a ticket with the old ## Exit conditions should still have its three commands read; got ${JSON.stringify(t.completionConditions)} (${t.completionConditionCount})`,
+  );
+  rmSync(dir, { recursive: true, force: true });
+}
+
+// When a ticket has both sections, ## Completion conditions is the one read.
+{
+  const dir = ticketFolder(
+    commandBlock("Exit conditions", "old command") + commandBlock("Completion conditions", "new command"),
+  );
+  const t = readTicket(dir);
+  check(
+    JSON.stringify(t.completionConditions) === JSON.stringify(["new command"]),
+    `## Completion conditions should win over ## Exit conditions; got ${JSON.stringify(t.completionConditions)}`,
+  );
+  rmSync(dir, { recursive: true, force: true });
+}
+
+// A ticket with neither section has no commands.
+{
+  const dir = ticketFolder("## What to build\n\nA widget.\n\n");
+  const t = readTicket(dir);
+  check(
+    Array.isArray(t.completionConditions) && t.completionConditions.length === 0 && t.completionConditionCount === 0,
+    `a ticket with no conditions section should have no commands; got ${JSON.stringify(t.completionConditions)} (${t.completionConditionCount})`,
+  );
+  rmSync(dir, { recursive: true, force: true });
+}
+
 if (fail === 0) {
   console.log(
-    "PASS: parseYaml reads groups into nested objects, ignores comments and blank lines, strips quotes, types booleans and integers, loadConfig merges a project's partial group override with every other default kept, the validation group fills its defaults and refuses a bad value naming the key, and the shipped workflow.yml parses to exactly the defaults.",
+    "PASS: parseYaml reads groups into nested objects, ignores comments and blank lines, strips quotes, types booleans and integers, loadConfig merges a project's partial group override with every other default kept, the validation group fills its defaults and refuses a bad value naming the key, the shipped workflow.yml parses to exactly the defaults, and readTicket reads a ticket's commands under ## Completion conditions, still reads the old ## Exit conditions, prefers the new section when both exist and finds none when neither does.",
   );
 }
 process.exit(fail);

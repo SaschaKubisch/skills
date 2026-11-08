@@ -300,18 +300,18 @@ export function screenshotSizes(conventions) {
 }
 
 // Reads one ticket.md: its `Kind:` (lowercased, "" when absent), the
-// commands under its fenced Exit conditions block and their count, and
-// the set of invariant identifiers listed under its "## Invariants this
-// touches" section.
+// commands under its fenced Completion conditions block and their count,
+// and the set of invariant identifiers listed under its "## Invariants
+// this touches" section.
 export function readTicket(ticketFolder) {
   const text = readFileSync(join(ticketFolder, "ticket.md"), "utf8");
-  const exitConditions = exitConditionCommands(text);
+  const completionConditions = completionConditionCommands(text);
   const kind = /^Kind:\s*(\S+)/m.exec(text);
   return {
     text,
     kind: kind ? kind[1].toLowerCase() : "",
-    exitConditions,
-    exitConditionCount: exitConditions.length,
+    completionConditions,
+    completionConditionCount: completionConditions.length,
     invariantIds: touchedInvariantIds(text),
   };
 }
@@ -325,8 +325,14 @@ function sectionBody(text, heading) {
   return (end === -1 ? rest : rest.slice(0, end)).join("\n");
 }
 
-function exitConditionCommands(text) {
-  const body = sectionBody(text, "## Exit conditions");
+// The section is `## Completion conditions`. A finished ticket keeps the
+// heading it was written with, `## Exit conditions`, which is read when
+// the new one is absent.
+function completionConditionCommands(text) {
+  const heading = text.split("\n").some((l) => l.trim() === "## Completion conditions")
+    ? "## Completion conditions"
+    : "## Exit conditions";
+  const body = sectionBody(text, heading);
   const fenceStart = body.indexOf("```");
   if (fenceStart === -1) return [];
   const fenceEnd = body.indexOf("```", fenceStart + 3);
@@ -418,7 +424,7 @@ export function invariantLabel(id) {
 // The one-line titles of the invariants a ticket lists under "## Invariants
 // this touches", as a map of normalized id to the bullet's text with its
 // number and its trailing explanation cut off ("9. Orders never go
-// negative, checked by exit condition 4." -> "Orders never go negative").
+// negative, checked by completion condition 4." -> "Orders never go negative").
 export function invariantTitles(ticketText) {
   const titles = new Map();
   const lines = sectionBody(ticketText, "## Invariants this touches").split("\n");
