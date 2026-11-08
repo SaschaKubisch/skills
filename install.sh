@@ -5,13 +5,13 @@
 #   ./install.sh --planning /path/to/project
 #
 # Without --planning: copies specify/, write-spec/, write-tickets/,
-# init-agent-context/, build/, judge/ and implement-ticket/ into <project>/.claude/skills/<name>/,
+# init-agent-context/, build/, judge/, implement-ticket/ and run-ticket/ into <project>/.claude/skills/<name>/,
 # LICENSE into <project>/.claude/skills/LICENSE, agents/builder.md and
 # agents/judge.md into <project>/.claude/agents/, and the default
 # workflow.yml into <project>/.claude/workflow.yml — only when the
 # project has none there yet; an existing one is never overwritten.
 # With --planning: copies only the planning skills specify/, write-spec/
-# and write-tickets/, plus init-agent-context/, into
+# and write-tickets/, plus init-agent-context/ (no run-ticket/), into
 # <project>/.claude/skills/<name>/ and LICENSE into
 # <project>/.claude/skills/LICENSE; no agents and no workflow.yml are
 # copied, since none of these four skills reads them.
@@ -48,7 +48,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 if [[ "$planning" -eq 1 ]]; then
   skills=(specify write-spec write-tickets init-agent-context)
 else
-  skills=(specify write-spec write-tickets init-agent-context build judge implement-ticket)
+  skills=(specify write-spec write-tickets init-agent-context build judge implement-ticket run-ticket)
 fi
 
 mkdir -p "$target/.claude/skills"
@@ -76,7 +76,7 @@ EOF
 else
   cat <<EOF
 installed into $target:
-  .claude/skills/specify, write-spec, write-tickets, init-agent-context, build, judge, implement-ticket, LICENSE
+  .claude/skills/specify, write-spec, write-tickets, init-agent-context, build, judge, implement-ticket, run-ticket, LICENSE
   .claude/agents/builder, judge
   .claude/workflow.yml (only if the project had none)
 EOF

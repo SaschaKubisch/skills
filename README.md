@@ -53,6 +53,15 @@ from a plain, interactive Claude Code session.
   rounds; opens the validation report (or, when none is due, prints a
   summary in the chat) and lets the person accept it — merged and marked
   done — request changes, or stop.
+- **run-ticket** — the loop for one ticket, run outside the model: a bash
+  script, short enough to read in full, that claims a ticket, works it in a
+  throwaway git worktree, starts a fresh worker for each iteration, runs the
+  ticket's completion conditions itself after every iteration, and stops on
+  a pass, at the turn limit or when the circuit breaker fires. It keeps the
+  evidence of the run and leaves the change for Review; it never merges,
+  pushes or moves the ticket to done. Typed in a terminal
+  (`bash .claude/skills/run-ticket/run-ticket.sh <ticket> --turn-limit N
+  --strikes N`); it is not part of the planning flow.
 
 ## The flow
 
@@ -100,6 +109,13 @@ builder round, and another judge round with `--judge` — or stop without
 accepting, which leaves the ticket in `in-progress/` for `/implement-ticket
 <slug>` to resume later.
 
+`run-ticket` is a second way to carry out a ticket, outside the flow
+above and outside any Claude Code session. A person types its script in
+a terminal; the script, not an agent, claims the ticket, decides after
+every iteration whether the completion conditions pass, and stops. It
+starts none of the agents in `agents/` and follows no other skill. Read `run-ticket/SKILL.md` for its exit codes, its evidence, and what its
+read-only protected paths do not cover.
+
 ## Where things land
 
 The first interview is about the whole product, and its files sit at the
@@ -140,7 +156,8 @@ names, because finished tickets keep files named that way.
 ```
 
 This copies `specify/`, `write-spec/`, `write-tickets/`,
-`init-agent-context/`, `build/`, `judge/` and `implement-ticket/` into `<project>/.claude/skills/<name>/`,
+`init-agent-context/`, `build/`, `judge/`, `implement-ticket/` and
+`run-ticket/` into `<project>/.claude/skills/<name>/`,
 `LICENSE` into `<project>/.claude/skills/LICENSE`,
 `agents/builder.md` and `agents/judge.md` into
 `<project>/.claude/agents/`, and the default `workflow.yml` into
@@ -158,7 +175,8 @@ Without the script, copy the same folders by hand into the same places.
 
 This copies only the three planning skills `specify/`, `write-spec/` and
 `write-tickets/`, plus `init-agent-context/` and `LICENSE`. It copies no
-agents and no `workflow.yml`: none of these four skills reads them. Work
+agents, no `workflow.yml` and not `run-ticket/`: none of these four skills
+reads them, and `run-ticket` is not part of the planning flow. Work
 the tickets by any method: the completion conditions under
 `## Completion conditions` decide done, and the ready gate described in
 `write-tickets` decides when a ticket may start.

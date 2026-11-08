@@ -33,7 +33,7 @@ mkdir -p "$project"
 }
 rm -f /tmp/install-output.$$
 
-for s in specify write-spec write-tickets init-agent-context build judge implement-ticket; do
+for s in specify write-spec write-tickets init-agent-context build judge implement-ticket run-ticket; do
   check "$here/$s/SKILL.md" "$project/.claude/skills/$s/SKILL.md"
 done
 check "$here/init-agent-context/scripts/check-agent-context.sh" "$project/.claude/skills/init-agent-context/scripts/check-agent-context.sh"
@@ -42,6 +42,9 @@ if [[ ! -x "$project/.claude/skills/init-agent-context/scripts/check-agent-conte
   fail=1
 fi
 for f in build/video.md build/scripts/video/compose-video.mjs build/scripts/video/record.mjs; do
+  check "$here/$f" "$project/.claude/skills/$f"
+done
+for f in run-ticket/run-ticket.sh run-ticket/prompt.md; do
   check "$here/$f" "$project/.claude/skills/$f"
 done
 check "$here/LICENSE" "$project/.claude/skills/LICENSE"
@@ -114,7 +117,7 @@ if [[ ! -x "$planning_project/.claude/skills/init-agent-context/scripts/check-ag
 fi
 check "$here/LICENSE" "$planning_project/.claude/skills/LICENSE"
 
-for s in build judge implement-ticket; do
+for s in build judge implement-ticket run-ticket; do
   if [[ -e "$planning_project/.claude/skills/$s" ]]; then
     echo "FAIL: install.sh --planning copied $s, which it should not" >&2
     fail=1
@@ -207,6 +210,9 @@ node "$here/test/workflow-lib.test.mjs" || fail=1
 
 # the instruction-file check script, against its samples
 bash "$here/test/init-agent-context.test.sh" || fail=1
+
+# the run-ticket loop, against a fake worker in temporary repositories
+bash "$here/test/run-ticket.test.sh" || fail=1
 
 # the evidence and report scripts, against their fixtures
 node "$here/test/scripts.test.mjs" || fail=1
