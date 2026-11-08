@@ -69,7 +69,8 @@ the skill here — say so. Find the ticket's folder under
 
 Apply the ready gate, reading the ticket as text: a `Kind:` line; a
 `Summary:` line of at most two sentences; at least one command under
-`## Exit conditions`; at least one numbered step under `## Steps`; every
+`## Completion conditions` (or, in a ticket written before the rename,
+`## Exit conditions`); at least one numbered step under `## Steps`; every
 slug under `## Blocked by` has a folder in `items/*/tickets/done/`. Any
 of these missing: stop and say which.
 
