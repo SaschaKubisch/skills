@@ -173,7 +173,7 @@ t8() {
 }
 
 t9() {
-  newrepo backlog; mkworker 'echo "hello from the worker"; echo "and its stderr" >&2
+  newrepo backlog; mkworker 'echo "hello from the worker"; echo "and its stderr" >&2; echo left > stray.txt
 if [ "$RUN_TICKET_ITERATION" = 2 ]; then finish; else work; fi'
   run_loop --turn-limit 4 --strikes 2
   local r; r="$(rundir)"
@@ -183,6 +183,7 @@ if [ "$RUN_TICKET_ITERATION" = 2 ]; then finish; else work; fi'
   has "$r/iter-2-conditions.log" "exit code 0"
   has "$r/diff.patch" "done.flag"
   has "$r/result" "status=passed"
+  has "$r/run.log" "uncommitted changes"
   has "$base/out" "$r/iter-2-worker.log"
   verdict "evidence"
 }

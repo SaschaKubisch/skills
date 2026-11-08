@@ -57,8 +57,9 @@ git cat-file -e "$start:$dir/ticket.md" 2>/dev/null || die 6 "$slug is not in co
 # 3. The run folder (the evidence) and the throwaway worktree beside the checkout.
 ts=$(date -u +%Y%m%dT%H%M%SZ); run=$root/.run-ticket/$slug-$ts; branch=run/$slug-$ts
 wt=$(dirname "$root")/$(basename "$root")-$slug-$ts
-mkdir -p "$run" && echo '*' > .run-ticket/.gitignore
-git worktree add -q -b "$branch" "$wt" "$start" 2>/dev/null || { rm -rf "$run"; die 6 "cannot make the worktree $wt"; }
+mkdir -p .run-ticket && mkdir "$run" 2>/dev/null || die 6 "the run folder $run exists"
+echo '*' > .run-ticket/.gitignore
+git worktree add -q -b "$branch" "$wt" "$start" 2>/dev/null || { rmdir "$run"; die 6 "cannot make the worktree $wt"; }
 log() { echo "$(date -u +%H:%M:%S) $*" | tee -a "$run/run.log"; }
 cd "$wt" || exit 6
 
@@ -91,7 +92,8 @@ boxes() { cat PROGRESS.md 2>/dev/null | grep -c '^- \[[ x]\] '; }
 n=0; strike=0; status=turn-limit
 while [ "$n" -lt "$limit" ]; do
   n=$((n + 1))
-  before=$(git rev-list --count "$start"..HEAD); nboxes=$(boxes); ticked=$(grep '^- \[x\] ' PROGRESS.md)
+  before=$(git rev-list --count "$start"..HEAD)
+  nboxes=$(boxes); ticked=$(grep '^- \[x\] ' PROGRESS.md)
   { cat "$here/prompt.md"; echo; echo "The ticket file is $dir/ticket.md."; } |
     RUN_TICKET_ITERATION=$n RUN_TICKET_FILE=$dir/ticket.md bash -c "$worker" > "$run/iter-$n-worker.log" 2>&1
   log "iteration $n: the worker exited with code $?"
@@ -114,6 +116,7 @@ done
 
 # 8. Stop: write the evidence, print where everything is, exit with the status code.
 last=$(git rev-parse HEAD)
+[ -z "$(git status --porcelain)" ] || log "warning: the worktree has uncommitted changes that diff.patch does not show"
 git diff "$start" "$last" > "$run/diff.patch"
 printf 'status=%s\niterations=%s\nstart_commit=%s\nlast_commit=%s\nworktree=%s\nbranch=%s\n' \
   "$status" "$n" "$start" "$last" "$wt" "$branch" > "$run/result"

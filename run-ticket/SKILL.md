@@ -185,7 +185,8 @@ worktree does not delete the branch `run/<slug>-<timestamp>`.
 
 A pass means the completion conditions exited 0 in the worktree as it
 stood, including any change the worker left uncommitted. `diff.patch`
-shows commits only.
+shows commits only; when the worktree has uncommitted changes at the stop,
+`run.log` says so.
 
 ## Not covered
 
