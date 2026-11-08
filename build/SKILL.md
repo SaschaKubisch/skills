@@ -13,7 +13,7 @@ Write the report. Hand back. Stop rather than soften.
 Two rules run through everything below:
 
 - **A check is never edited to pass.** Not a test, not a spec, not a
-  ticket's exit condition. If a check is wrong, say so in the report and
+  ticket's completion condition. If a check is wrong, say so in the report and
   stop; a person changes it.
 - **Everything claimed is shown.** A test that ran has its command and
   exit code in the report. A screen that exists has its screenshot. What
@@ -33,9 +33,9 @@ The ticket is a folder holding `ticket.md` and, after this method runs,
 
 Detect, do not assume. Say what you found before the first change:
 
-- The ticket in full: its Steps, its exit conditions, its Blocked by, its
-  Kind line. A ticket without a `Kind:` line is not ready to work: stop
-  and say so. Every ticket it is blocked by is in `done/`, or stop.
+- The ticket in full: its Steps, its completion conditions, its Blocked
+  by, its Kind line. A ticket without a `Kind:` line is not ready to work:
+  stop and say so. Every ticket it is blocked by is in `done/`, or stop.
 - Its parent spec, `specs/system.md`, `CONTEXT.md`, `stdlib/` if present.
   The tickets use the glossary's words; so does the code.
 - `PROGRESS.md` at the working-tree root: if present and its first
@@ -103,9 +103,9 @@ default; the second reproduces the older behaviour exactly.
 - `step gate: changed-tests | ticket-tests`. `changed-tests`: per step run
   the typecheck and only the test files the step created or changed (and,
   under `test scope: feature`, the specs covering a shared file the step
-  touched); the ticket's whole exit-condition set runs once, at the end of
-  the ticket. `ticket-tests`: every step runs the cheap checks and the
-  ticket's exit conditions.
+  touched); the ticket's whole completion-condition set runs once, at the
+  end of the ticket. `ticket-tests`: every step runs the cheap checks and
+  the ticket's completion conditions.
 - `prove failing first: bug-fixes | always`. `bug-fixes`: the proof that a
   test fails against the old code is required only for a bug fix (a fix
   ticket or step); tests for new features skip it. `always`: every test
@@ -124,9 +124,10 @@ screenshot method — then write it in, so the next ticket does not
 detect it again. Defaults when nothing declares it: a web UI gets
 Playwright at 1280x800 and 390x844; a terminal UI gets text captures; no
 UI gets command output saved as text; the video method is Playwright's
-video, combined with ffmpeg when it is installed; the base branch is `main`; the
-workflow config is `.claude/workflow.yml` if that file exists, else
-every default in the next section.
+video, composed with ffmpeg by the scripts `video.md` describes when it
+is installed; the base branch is `main`; the workflow config is
+`.claude/workflow.yml` if that file exists, else every default in the
+next section.
 
 ## The workflow config
 
@@ -182,9 +183,12 @@ the chat instead. The keys:
   rendered report, `validation/agent-report.pdf` beside the HTML.
 - `video_walkthrough` — `false` (default). `true`: record the key flow
   as a video with chapters, embedded in the report.
-- `video_scope` — `ticket` (default) or `item`. `ticket`: every ticket's
-  report gets the video. `item`: only the ticket that empties its item's
-  backlog.
+- `video_scope` — `ticket` (default), `item` or `app`. `ticket`: every
+  ticket's report gets a video of its key flow. `item`: only the ticket
+  that empties its item's backlog gets one, of the item's flows. `app`:
+  due and stored like `item`, but the video is a tour of the whole app,
+  made from one story script the project keeps and extends (see
+  `video.md`, "What the video covers").
 - `video_commit` — `true` by default. `false`: keep videos git-ignored
   instead of committed.
 - `video_max_mb` — `10` (default). A larger video is re-encoded or
@@ -227,8 +231,8 @@ step starts from a fresh read. For each unticked step, in order:
 3. Implement the least that makes it pass. Run the step's gate. Under
    `step gate: changed-tests` (default): the typecheck and only the test
    files the step created or changed; the other checks and the ticket's
-   exit conditions wait for the end of the ticket (step 4). Under
-   `ticket-tests`: the cheap checks and the ticket's exit conditions.
+   completion conditions wait for the end of the ticket (step 4). Under
+   `ticket-tests`: the cheap checks and the ticket's completion conditions.
    Then `test scope` adds the end-to-end part: under `feature` (default)
    the specs covering any shared file the step touched; under `full` the
    whole suite, every step, whatever the gate.
@@ -241,7 +245,7 @@ its claim written under Not tested in the report, with the reason. Never
 skip it silently.
 
 **4. Validate, cheapest first.** The checks from Conventions, cheapest
-first, then the ticket's exit-conditions block as it stands. Under
+first, then the ticket's completion-conditions block as it stands. Under
 `test scope: full` the whole end-to-end command from Conventions runs
 in between; under `feature` (default) it never runs whole, only the
 specs of the ticket and those covering the shared files its diff
@@ -266,8 +270,9 @@ every size Conventions declares:
   "invariant"/"invariants", or a letter-number id like `D1` on its own,
   as a spec's design invariants are named: the Design section inside each
   spec numbers them D1, D2, ...) — every one has a test.
-- **One test per exit condition a screen can observe**, named
-  `exit-<NN>-<slug>`, with its shot.
+- **One test per completion condition a screen can observe**, named
+  `exit-<NN>-<slug>`, with its shot. The prefix keeps its older name:
+  finished tickets carry files named that way.
 
 Capture every one of these in a single pass, right after the last code
 change of the round — never once per step. Under `per-ticket extras: end`
@@ -315,7 +320,7 @@ video goes in the same commit, unless `validation.video_commit` is `false`.
 everything it reports before anything else here — each line it prints
 names one problem with the screenshots or the report against the ticket
 and the Conventions. Push nothing. How the branch lands is not this
-method's job. Run every line of the exit-conditions block yourself, in
+method's job. Run every line of the completion-conditions block yourself, in
 order; all exit 0, or stop. The ticket reaches its item's `tickets/done/`
 when the person accepts the report: the `implement-ticket` skill does the merge
 and the move on that accept; working by hand, the person does it — merge,
@@ -396,8 +401,8 @@ The rules that run through it:
 **Where it lives, and when it is due.** Scope `ticket` (`report_scope`,
 `video_scope`): the outputs sit in the ticket's own `validation/` folder,
 `agent-report.html`, `agent-report.pdf`, `walkthrough.mp4` or the `.webm`
-files, and `screenshots/`. Scope `item`: the item-wide outputs sit in the
-item's root, `items/<item>/validation/`, and the ticket that empties its
+files, and `screenshots/`. Scope `item` (and `app`, for the video): the
+item-wide outputs sit in the item's root, `items/<item>/validation/`, and the ticket that empties its
 item's backlog produces them. A ticket empties its item's backlog when
 no other ticket of its item is left in `backlog/` or `in-progress/`.
 The per-ticket evidence, `report.json` and
@@ -420,16 +425,25 @@ headless browser it skips, writes the reason to `report.json`'s
 `pdf.skipped`, and the report shows it under Not tested.
 
 **The video.** With `validation.video_walkthrough` `true` and in scope
-(`video_scope`: `ticket` gives every ticket's report the video, `item`
-only the ticket that empties its item's backlog), the video is captured in
+(`video_scope`: `ticket` gives every ticket's report a video of its
+flow, `item` only the ticket that empties its item's backlog, `app` the
+same ticket but with a tour of the whole app), the video is captured in
 the same single pass as the screenshots, never in a second one.
 
 - One recording per role, with Playwright's video. With ffmpeg, combine
   them side by side with a caption per chapter into `walkthrough.mp4`.
   Without ffmpeg, keep one `.webm` per role and say so in the video's
   `claim`.
+- Read `video.md`, beside this file, first. It is the recipe: a silent
+  warm-up run, a clean test database, one browser per role, the
+  screenshots taken in the same recorded pass, then the checks of the
+  result. The scripts in `scripts/video/` help with the recording
+  (`record.mjs`) and do the composing (`compose-video.mjs`, which prints
+  the `chapters` for `report.json`). You write only the story.
 - Detect the method once and write it into Conventions as a `video
-  method:` line, as the screenshot method is.
+  method:` line, as the screenshot method is. Under `app`, the line also
+  names the project's one story script and its run command; extend that
+  script with the item's new flows instead of writing a new one.
 - `video_commit` `false`: add the video to `.gitignore`, at whichever of
   the two places it lives.
 - `video_max_mb`: a larger video is re-encoded or shortened first.
@@ -448,7 +462,7 @@ the same single pass as the screenshots, never in a second one.
   "branch": "feat/0007-prices",
   "started": "2026-01-01T10:00:00Z",
   "ended": "2026-01-01T12:00:00Z",
-  "ended_by": "exit conditions passed",
+  "ended_by": "completion conditions passed",
   "verdict": { "builder": "ready_with_notes", "reasons": ["<at most 3>"], "judge": null },
   "summary": "<at most 3 sentences and 60 words>",
   "steps": [ { "n": 1, "summary": "<what exists now because of it>" } ],
@@ -526,16 +540,16 @@ the start. In `tests[].proves`, a design invariant is written `D<n> of
 <spec path>`.
 
 `commands` carries every command run this round, not only the
-exit-conditions block; a test carries `"proved_failing": true` when the old-code proof was run and
+completion-conditions block; a test carries `"proved_failing": true` when the old-code proof was run and
 `"bug_fix": true` when it covers a bug fix; under `test scope: full` the one whole-suite run of the round (see step 4)
 has `whole_suite: true`, on the commit it ran on — `check-evidence.mjs`'s
 whole-suite rule reads exactly this; under `feature` no command carries it
 and the rule is off. A command may carry `"deferred": true` under `feature`
 only: an unrelated failure, noted and not chased. A Conventions check or
-one of the ticket's exit conditions is never deferred, nor is a command
+one of the ticket's completion conditions is never deferred, nor is a command
 that runs one of their test files; `check-evidence.mjs` refuses the flag on
-one and counts its failure. Under `feature` every check and exit condition
-has a run on the final commit (the commit of the last command recorded);
+one and counts its failure. Under `feature` every check and completion
+condition has a run on the final commit (the commit of the last command recorded);
 `check-evidence.mjs`'s owed rule reads exactly this. `screenshots[].sizes` names every
 size actually captured for that shot — every size Conventions declares
 must be among them, and each must exist as `<file>-<size>.png` under
@@ -555,7 +569,7 @@ did it.
 
 Only under `test scope: full`; under `feature` there is no such run and
 no `suite-runs.json`. A whole-suite run is every check from Conventions and every end-to-end spec and
-exit-conditions command run together, back to back, nothing failing in
+completion-conditions command run together, back to back, nothing failing in
 between. Append each one to `validation/suite-runs.json` — one line per
 run: the commit, the commands, the exit codes, how long it took.
 
@@ -573,7 +587,7 @@ checks.
 - Every screenshot shows what its file name claims, readable at every
   declared size; scroll or capture full page when needed; wait for a
   live view to be connected before capturing it. Look at each image.
-- Name `exit-NN-*` only for this ticket's exit condition NN,
+- Name `exit-NN-*` only for this ticket's completion condition NN,
   `invariant-NN-*` only for invariant NN. Screenshots a shared spec file
   produces for other tickets' screens are not kept.
 - A refusal's screenshot shows the refusal as a person sees it.

@@ -10,7 +10,7 @@ description: >-
   commands. Pass the record, or source files; with nothing, it finds the
   sources by reading. Looks at the repository first and uses its names;
   never overwrites a locked spec. No interview, no invention: copies the
-  brief, entities and invariants verbatim, proposes the exit-condition
+  brief, entities and invariants verbatim, proposes the completion-condition
   commands from the sources' criteria and asks once, and stops rather
   than guesses when something is missing. Use after specify, before
   write-tickets.
@@ -121,9 +121,9 @@ the repository, before writing.
   "Screens are designed and built with the frontend-design skill". A
   record whose Design section says `No user interface.` writes that line
   and nothing more.
-- **The exit conditions.** The finish line, as commands: one fenced block,
-  one runnable command per line, cheapest first, each exiting non-zero
-  while its criterion is not met. Propose them from the criteria the
+- **The completion conditions.** The finish line, as commands: one fenced
+  block, one runnable command per line, cheapest first, each exiting
+  non-zero while its criterion is not met. Propose them from the criteria the
   sources give — a numbered "done" list, a "without a reload", a number.
   On an empty folder the commands name tests that do not exist yet; that
   is expected — the tickets' steps create them, and the loop cannot finish
@@ -149,7 +149,7 @@ the repository, before writing.
   Open decisions where there is a record. A required section: if empty,
   say so and why; never delete the heading.
 
-**2. Show the exit conditions and, for a per-topic spec, the seams, as
+**2. Show the completion conditions and, for a per-topic spec, the seams, as
 text, then ask the user to confirm them** (see Asking): "Use these as
 the finish line?", options "Yes, as proposed (Recommended)" / "Change
 them". It is the one question this skill asks about the spec's own
@@ -228,8 +228,8 @@ To change a requirement: stop the run, edit, cut the tickets again.**
 
 ## Entities
 
-<one short block per entity: its name, and the fields an invariant or an
-exit condition actually touches>
+<one short block per entity: its name, and the fields an invariant or a
+completion condition actually touches>
 
 ## Invariants
 
@@ -250,7 +250,7 @@ Design method: <the skill or method that builds the screens, for example
 "Screens are designed and built with the frontend-design skill". Left out
 when there is no user interface>
 
-## Exit conditions
+## Completion conditions
 
 <one fenced block, one command per line, cheapest first — what must pass
 for this spec to count as finished. Tickets cut from this spec inherit

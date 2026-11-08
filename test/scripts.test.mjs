@@ -65,7 +65,8 @@ const passingFixtures = [
   // in the item's root validation/ folder.
   "passing-item-last",
   // no `test scope` key, so the default `feature`: the commands carry no
-  // whole-suite run and the ticket still passes.
+  // whole-suite run and the ticket still passes. Its ticket still has the
+  // old "## Exit conditions" section, which check-evidence.mjs still reads.
   "passing-feature-scope",
 ];
 
@@ -73,6 +74,16 @@ for (const fixture of passingFixtures) {
   const { code, out, err } = run(checkEvidence, ticketDir(fixture));
   check(code === 0, `check-evidence.mjs should exit 0 on ${fixture} (got ${code}):\n${err}`);
   check(out.includes("PASS"), `check-evidence.mjs should print PASS on ${fixture}`);
+}
+
+// The fixtures hold both headings: the new "## Completion conditions" in
+// "passing", and the old "## Exit conditions" in "passing-feature-scope",
+// which stands for a finished ticket that keeps the heading it was written
+// with. The owed-command checks below read that old section.
+{
+  const heading = (fixture, text) => readFileSync(join(ticketDir(fixture), "ticket.md"), "utf8").split("\n").includes(text);
+  check(heading("passing", "## Completion conditions") && !heading("passing", "## Exit conditions"), "the passing fixture should have the new ## Completion conditions section only");
+  check(heading("passing-feature-scope", "## Exit conditions") && !heading("passing-feature-scope", "## Completion conditions"), "the passing-feature-scope fixture should keep the old ## Exit conditions section only");
 }
 
 // Each failing fixture exits 1 and names its own rule, no other.
@@ -135,6 +146,19 @@ for (const [fixture, prefix] of Object.entries(rules)) {
   }
 }
 
+// The exit-evidence rule keeps its label and the exit-NN- screenshot prefix
+// (finished tickets keep files with that prefix); its message uses the
+// completion wording. This fixture's ticket has four commands under
+// "## Completion conditions" and a screenshot named exit-05-.
+{
+  const { err } = runFixture("fail-exit-evidence");
+  const line = err.split("\n").find((l) => l.startsWith("exit-evidence:")) || "";
+  check(
+    line.includes("names completion condition 5") && line.includes("the ticket's Completion conditions block has 4 command(s)."),
+    `the exit-evidence message should use the completion wording; got: ${line}`,
+  );
+}
+
 // Test scope. `full` (fail-whole-suite) owes a whole-suite run; `feature`
 // (the default) does not, but still fails on a failed command of its own.
 {
@@ -167,7 +191,7 @@ for (const [fixture, prefix] of Object.entries(rules)) {
       rep.commands.push({ ...unrelated });
     });
     check(r.code === 1 && reports(r.err, "verdict:"), `a deferred failure should cap the verdict at ready_with_notes; got:\n${r.err}`);
-    // A failed command that is not deferred (an exit condition, or a spec
+    // A failed command that is not deferred (a completion condition, or a spec
     // covering a touched shared file) still fails the ticket.
     r = variant((rep) => {
       rep.commands.push({ command: "npx playwright test e2e/shared.spec.ts", exit_code: 1, commit: "abc1234", whole_suite: false });
@@ -176,34 +200,40 @@ for (const [fixture, prefix] of Object.entries(rules)) {
     r = variant((rep) => {
       rep.commands[3].exit_code = 1;
     });
-    check(r.code === 1 && reports(r.err, "verdict:"), `feature scope should still fail a failed exit-condition command; got:\n${r.err}`);
-    // Only an unrelated spec may be deferred: an exit condition or a
+    check(r.code === 1 && reports(r.err, "verdict:"), `feature scope should still fail a failed completion-condition command; got:\n${r.err}`);
+    // Only an unrelated spec may be deferred: a completion condition or a
     // Conventions check marked deferred is refused and still fails.
     r = variant((rep) => {
       rep.commands[3].exit_code = 1;
       rep.commands[3].deferred = true;
       rep.verdict = { ...withNotes };
     });
-    check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred exit condition should be refused; got:\n${r.err}`);
+    check(
+      r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:") && r.err.includes("one of the ticket's completion conditions"),
+      `a deferred completion condition should be refused; got:\n${r.err}`,
+    );
     r = variant((rep) => {
       rep.commands[0].exit_code = 1;
       rep.commands[0].deferred = true;
       rep.verdict = { ...withNotes };
     });
     check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred Conventions check should be refused; got:\n${r.err}`);
-    // A reworded exit condition (same test file, an extra flag) marked
+    // A reworded completion condition (same test file, an extra flag) marked
     // deferred is refused too.
     r = variant((rep) => {
       rep.commands.push({ command: "npx playwright test e2e/widget.spec.ts --reporter=line", exit_code: 1, commit: "abc1234", whole_suite: false, deferred: true });
       rep.verdict = { ...withNotes };
     });
-    check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred rewording of an exit condition should be refused; got:\n${r.err}`);
-    // Under feature every check and exit condition is owed a run on the
+    check(r.code === 1 && reports(r.err, "deferred:") && reports(r.err, "verdict:"), `a deferred rewording of a completion condition should be refused; got:\n${r.err}`);
+    // Under feature every check and completion condition is owed a run on the
     // final commit: one left out, or run only on an earlier commit, fails.
     r = variant((rep) => {
       rep.commands = rep.commands.slice(0, 1);
     });
-    check(r.code === 1 && reports(r.err, "owed:"), `feature scope should owe a run of every exit condition; got:\n${r.err}`);
+    check(
+      r.code === 1 && reports(r.err, "owed:") && r.err.includes("one of the ticket's completion conditions"),
+      `feature scope should owe a run of every completion condition; got:\n${r.err}`,
+    );
     r = variant((rep) => {
       rep.commands[0].commit = "0000000";
     });
@@ -321,6 +351,35 @@ function withCopy(fixture, change) {
   check(code === 1, `an item-scope video in the ticket's folder should be refused (got ${code})`);
   check(reports(err, "video-place:"), `the misplaced item-scope video should be reported; got:\n${err}`);
   check(reports(err, "report-html:"), `the misplaced item-scope report should be reported; got:\n${err}`);
+}
+
+// `app` is due and placed exactly like `item`: only for the ticket that
+// empties its item's backlog, in the item's root. Only the story differs.
+const setVideoScope = (tmp, scope) => {
+  const f = join(tmp, ".claude", "workflow.yml");
+  writeFileSync(f, readFileSync(f, "utf8").replace(/video_scope: \w+/, `video_scope: ${scope}`));
+};
+{
+  const { code, err } = withCopy("passing-item-last", (tmp) => setVideoScope(tmp, "app"));
+  check(code === 0, `video_scope app with the video in the item's root should pass (got ${code}):\n${err}`);
+}
+{
+  const { code, err } = withCopy("passing-item-scope", (tmp) => setVideoScope(tmp, "app"));
+  check(code === 0, `video_scope app should owe no video from a ticket that does not empty its item's backlog (got ${code}):\n${err}`);
+}
+{
+  const { code, err } = withCopy("passing-item-scope", (tmp) => {
+    setVideoScope(tmp, "app");
+    rmSync(join(tmp, "items", "alpha", "tickets", "backlog"), { recursive: true });
+  });
+  check(code === 1 && reports(err, "video:"), `the last ticket at video_scope app should owe the video (got ${code}):\n${err}`);
+}
+{
+  const { code, err } = withCopy("passing-item-last", (tmp, ticket) => {
+    setVideoScope(tmp, "app");
+    renameSync(join(tmp, "items", "alpha", "validation", "walkthrough.mp4"), join(ticket, "validation", "walkthrough.mp4"));
+  });
+  check(code === 1 && reports(err, "video-place:"), `an app-scope video in the ticket's folder should be refused (got ${code}):\n${err}`);
 }
 
 // ---- render-report.mjs and render-pdf.mjs ----

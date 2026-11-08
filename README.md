@@ -23,8 +23,8 @@ from a plain, interactive Claude Code session.
   runnable commands. It carries a Design section: the design decisions,
   the design invariants and the method that builds the screens.
 - **write-tickets** — cuts a spec into tickets: vertical slices sized to
-  one run, each with its steps and its exit conditions. Each ticket that
-  builds a screen starts with a design brief, and the first UI ticket
+  one run, each with its steps and its completion conditions. Each ticket
+  that builds a screen starts with a design brief, and the first UI ticket
   builds the design system where there is none. Names no implementing
   method; any can work the tickets.
 - **init-agent-context** — sets up the standing instruction file every
@@ -69,9 +69,9 @@ asks whether to write the spec now. When the thing has a user interface,
 that includes its design and its design invariants. `write-spec` turns
 the record into a locked spec, with a Design section, then asks whether
 to cut it into tickets now. `write-tickets` cuts the spec into tickets —
-small enough for one run, each with its own exit conditions, and each
-screen ticket starting from a design brief — names the first one, and
-stops. Any of the three also works typed on its own — `/specify`,
+small enough for one run, each with its own completion conditions, and
+each screen ticket starting from a design brief — names the first one,
+and stops. Any of the three also works typed on its own — `/specify`,
 `/write-spec`, `/write-tickets` — outside the chain.
 
 The person then starts the building side. `/implement-ticket <slug>
@@ -125,6 +125,14 @@ Ticket numbers are one sequence across every item, so
 next, whichever item it belongs to. An item adds to the system's spec
 and never changes it.
 
+A ticket's finish line is its `## Completion conditions` section, a fenced
+block of commands. The section used to be named `## Exit conditions`, and
+a ticket written then keeps that heading: the scripts in `build/scripts/`
+and the ready gate read it when `## Completion conditions` is absent, so
+finished tickets and an item's report still work. The screenshot prefix
+`exit-NN-` and the evidence problem label `exit-evidence` keep their
+names, because finished tickets keep files named that way.
+
 ## Install
 
 ```
@@ -151,9 +159,9 @@ Without the script, copy the same folders by hand into the same places.
 This copies only the three planning skills `specify/`, `write-spec/` and
 `write-tickets/`, plus `init-agent-context/` and `LICENSE`. It copies no
 agents and no `workflow.yml`: none of these four skills reads them. Work
-the tickets by any method: the exit
-conditions under `## Exit conditions` decide done, and the ready gate
-described in `write-tickets` decides when a ticket may start.
+the tickets by any method: the completion conditions under
+`## Completion conditions` decide done, and the ready gate described in
+`write-tickets` decides when a ticket may start.
 
 ## Conventions
 
@@ -208,9 +216,9 @@ default; the second reproduces the older behaviour exactly.
 - `step gate: changed-tests | ticket-tests`. `changed-tests`: per step run
   the typecheck and only the test files the step created or changed (and,
   under `test scope: feature`, the specs covering a shared file the step
-  touched); the ticket's whole exit-condition set runs once, at the end of
-  the ticket. `ticket-tests`: every step runs the cheap checks and the
-  ticket's exit conditions.
+  touched); the ticket's whole completion-condition set runs once, at the
+  end of the ticket. `ticket-tests`: every step runs the cheap checks and
+  the ticket's completion conditions.
 - `prove failing first: bug-fixes | always`. `bug-fixes`: the proof that a
   test fails against the old code is required only for a bug fix (a fix
   ticket or step); tests for new features skip it. `always`: every test
@@ -248,9 +256,16 @@ and the screenshots, is always written and checked. The keys:
 - `report_pdf` (`false`) — `true`: also a PDF beside each HTML report.
 - `video_walkthrough` (`false`) — `true`: record the key flow as a video
   with chapters, embedded in the report.
-- `video_scope` (`ticket`) — `ticket`: every ticket's report gets the
-  video. `item`: only the ticket that empties its item's backlog (no other
-  ticket of the item left in `backlog/` or `in-progress/`).
+  The builder follows `build/video.md` and the scripts in
+  `build/scripts/video/`: a silent warm-up run, a clean test database,
+  one recorded browser per role, then ffmpeg and Chromium compose one
+  captioned video. The project needs Playwright and, to compose, ffmpeg.
+- `video_scope` (`ticket`) — `ticket`: every ticket's report gets a
+  video of its flow. `item`: only the ticket that empties its item's
+  backlog (no other ticket of the item left in `backlog/` or
+  `in-progress/`). `app`: the same ticket and place as `item`, but the
+  video tours the whole app, from one story script the project keeps
+  and extends with each finished item.
 - `video_commit` (`true`) — `false`: keep videos git-ignored.
 - `video_max_mb` (`10`) — a larger video is re-encoded or shortened; the
   evidence check refuses it if it is still over.

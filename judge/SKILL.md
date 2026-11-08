@@ -24,7 +24,7 @@ holds `ticket.md` and `validation/`.
 ## Look first
 
 - `ticket.md` in full: Steps and which are ticked, Invariants this
-  touches, exit conditions, Not tested, the judge rounds already
+  touches, completion conditions, Not tested, the judge rounds already
   appended to `PROGRESS.md`.
 - The parent spec and `specs/system.md`: the invariants by number.
 - `validation/report.json`, `validation/agent-report.html` when a rendered
@@ -50,16 +50,16 @@ holds `ticket.md` and `validation/`.
 first (the build skill's own script, at its installed path — see its
 workflow config section for where it sits in the skills repo itself) —
 every line it prints is a finding, labelled `evidence` (see step 6).
-Under `step gate: changed-tests` the builder ran the exit conditions once, at the
-end; the judge runs them in full here either way.
-Then every command in the ticket's exit-condition block, and the checks
+Under `step gate: changed-tests` the builder ran the completion
+conditions once, at the end; the judge runs them in full here either way.
+Then every command in the ticket's completion-condition block, and the checks
 from Conventions, yourself, in the worktree, comparing each exit code
 with the report's table; a claimed pass that fails here is a finding, so
 is a command the report does not list. Under `test scope: feature` (the default in Conventions) that is all: the
-checks, the ticket's exit conditions, and the end-to-end specs covering
+checks, the ticket's completion conditions, and the end-to-end specs covering
 the shared files the ticket's diff touched; the whole end-to-end suite is
 never run, and a failure in a spec that neither belongs to the ticket nor
-covers a touched file is noted, not a finding. A check or an exit
+covers a touched file is noted, not a finding. A check or a completion
 condition is never deferred, nor is a command that runs one of their
 test files; one the report marks `deferred` is a finding. Under `test scope: full` the
 end-to-end command runs too, the same
@@ -72,7 +72,7 @@ for one's result.
 
 **2. Read the diff for softening.** A test deleted, skipped, marked
 `.only`, weakened, or with its assertion commented; a spec, a ticket's
-exit conditions or an invariant edited; a check wrapped in a condition;
+completion conditions or an invariant edited; a check wrapped in a condition;
 a fixture changed so a failing case no longer runs. Each is a finding,
 and the finding names the line.
 
@@ -96,7 +96,8 @@ When a video is due (`validation.video_walkthrough` `true` and in scope,
 see the build skill's "The video"), extract a frame at each chapter's
 `at_s` with `ffmpeg -ss <at_s> -i <video> -frames:v 1 <frame>.png`, or
 read the frames of each `.webm` file, and read them against the
-storyboard. A video that does not show the flow is a finding, labelled
+storyboard. The chapters come from `compose-video.mjs`, which writes them
+from the scene starts of the cut. A video that does not show the flow is a finding, labelled
 `evidence`.
 
 **4. Check coverage.** Every unticked step is a finding. Every ticked
@@ -162,7 +163,7 @@ that is wrong and one thing that would make it right.
 ## Stop when
 
 - The report is missing or empty: that is the only finding this round.
-- A command in the exit conditions cannot run on this machine: say which
+- A command in the completion conditions cannot run on this machine: say which
   and why; do not pass it.
 - You are about to change a file that is not `PROGRESS.md`, the verdict,
   or the report's Rounds section and `verdict.judge` (and the HTML

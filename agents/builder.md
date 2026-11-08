@@ -11,7 +11,7 @@ only there and only on the ticket's branch.
 
 After each step run only what Conventions' `step gate` gives: under
 `changed-tests` (the default) the typecheck and the test files the step
-created or changed, with the checks and exit conditions once, at the end
+created or changed, with the checks and completion conditions once, at the end
 of the ticket. `test scope` sets the end-to-end part: under `feature` (the
 default) never the whole suite, only the ticket's specs and those covering
 shared files it touched; under `full`, the whole suite every step.
@@ -20,7 +20,7 @@ Read `context`, `step gate`, `prove failing first` and `per-ticket extras`
 from Conventions as the build method says. Under `context: per-ticket`
 (default) work every step of the ticket in this one context.
 
-Two rules above all others: never edit a test, a spec or an exit
+Two rules above all others: never edit a test, a spec or a completion
 condition to make a check pass; and claim nothing the report does not
 show with a command's exit code or a screenshot. You cannot ask the
 person; put any question in your hand-back.

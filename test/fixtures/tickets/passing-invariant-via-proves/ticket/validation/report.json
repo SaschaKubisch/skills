@@ -5,7 +5,7 @@
   "branch": "feat/0002-another-sample",
   "started": "2026-01-02T10:00:00Z",
   "ended": "2026-01-02T11:00:00Z",
-  "ended_by": "exit conditions passed",
+  "ended_by": "completion conditions passed",
   "verdict": { "builder": "ready", "reasons": ["All checks green and every step proved."], "judge": null },
   "summary": "The second widget now appears on the page and passes an accessibility check.",
   "steps": [
