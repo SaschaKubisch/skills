@@ -1,6 +1,6 @@
 ---
 name: write-tickets
-description: Cut a spec into tickets — vertical slices sized to one run, each with a Summary line of at most two sentences under its title, a Parent line, its blocking edges, AFK or HITL, its ordered Steps, and exit conditions that are runnable commands. Names no implementing method; the tickets can be worked by any. Writes them as files under items/<item>/tickets/backlog/, never in-progress/, and mirrors them to GitHub issues when a project is configured. Use after write-spec.
+description: Cut a spec into tickets — vertical slices sized to one run, each with a Summary line of at most two sentences under its title, a Parent line, its blocking edges, AFK or HITL, its ordered Steps, and completion conditions that are runnable commands. Names no implementing method; the tickets can be worked by any. Writes them as files under items/<item>/tickets/backlog/, never in-progress/, and mirrors them to GitHub issues when a project is configured. Use after write-spec.
 disable-model-invocation: true
 ---
 
@@ -12,7 +12,7 @@ ordered steps that build it and the commands that decide whether it is
 done.
 
 A ticket is one run's unit of work. Its Steps become the working
-checklist; its exit conditions decide done. A ticket a loop cannot grade
+checklist; its completion conditions decide done. A ticket a loop cannot grade
 is not finished; a ticket without steps cannot be run.
 
 Tickets are folders: `items/<item>/tickets/<status>/NNNN-<slug>/`, holding
@@ -66,7 +66,7 @@ Detect, do not assume:
   project's CLAUDE.md `## Conventions` section (see Conventions below).
   Configured, or not — absent means the mirror is off.
 
-Say what you found before cutting a slice. Every step and every exit
+Say what you found before cutting a slice. Every step and every completion
 condition below depends on it.
 
 ## Asking
@@ -92,7 +92,8 @@ need. It blocks every other UI ticket.
   repository has — schema, server, UI, checks. Not one layer.
 - A finished slice can be shown working, or verified, on its own.
 - Each slice is sized to one run: a fresh context reads it, works its
-  steps, and passes its exit conditions. If that takes two runs, split it.
+  steps, and passes its completion conditions. If that takes two runs,
+  split it.
 - Many thin slices, not a few thick ones.
 - The first slice is the simplest end-to-end path. On an empty
   repository that is the walking skeleton: every check passes with
@@ -102,9 +103,9 @@ need. It blocks every other UI ticket.
   slice and no step. Say which items you skipped and why.
 
 Why vertical: a slice that ships one layer works only once every other
-layer has landed, so its exit conditions have to reach into work another
+layer has landed, so its completion conditions have to reach into work another
 ticket owns, and nothing can be verified alone. A vertical slice contains
-everything its own exit conditions test.
+everything its own completion conditions test.
 
 **The exception: a wide refactor.** One mechanical change — rename a
 column, retype a shared symbol — whose blast radius covers the codebase,
@@ -200,11 +201,11 @@ line, and ask about it in step 6.
   A design invariant is named by its id and spec: `— proves: D2 of
   specs/system.md`.
 
-**5. Write exit conditions as commands.** Every exit condition is a
-runnable command that exits non-zero when it is not satisfied. Prose is
-something a loop can claim to have satisfied; a command is something it
-cannot. A ticket's commands are the ones from its parent spec that decide
-this slice, plus any the slice introduces.
+**5. Write completion conditions as commands.** Every completion
+condition is a runnable command that exits non-zero when it is not
+satisfied. Prose is something a loop can claim to have satisfied; a
+command is something it cannot. A ticket's commands are the ones from its
+parent spec that decide this slice, plus any the slice introduces.
 
 ```
 npm run build
@@ -223,7 +224,7 @@ at; never dress a human check up as a command.
 
 **6. Present the breakdown, then ask.** A numbered list. Per ticket:
 title; AFK or HITL; blocked by (or "nothing — can start now"); what it
-delivers, end to end; its steps; its exit conditions. If the project's
+delivers, end to end; its steps; its completion conditions. If the project's
 CLAUDE.md has no `## Conventions` section, propose one in the same round
 — in the format under Conventions below — from what "Look first"
 detected (checks, end-to-end command, base branch, test scope, github project), with the defaults given there for whatever
@@ -307,7 +308,7 @@ The files are the tickets; the issues are a view.
 - A ticket would land anywhere but `tickets/backlog/`: it does not. This
   skill never claims a ticket — a person or a tool does that, through
   the ready gate.
-- An exit condition is prose: it is not an exit condition.
+- A completion condition is prose: it is not a completion condition.
 - A ticket has no `Summary:` line, or one longer than two sentences: fix
   it before writing the file.
 - A slice needs two runs: split it. A step needs two iterations: split it.
@@ -343,7 +344,7 @@ when nothing declares a key: the base branch is `main`; the test scope is
 run are the ticket's own and those covering the shared files touched;
 when they run is `step gate`'s, below. The whole end-to-end suite never
 runs, not per step, not at the end, not in the judge. `full`: every check
-and the whole suite on every step, whatever `step gate` says. A ticket's own steps and exit conditions are written the same
+and the whole suite on every step, whatever `step gate` says. A ticket's own steps and completion conditions are written the same
 under both.
 
 Four more keys trade rigour per step for speed. The first value is the
@@ -357,9 +358,9 @@ default; the second reproduces the older behaviour exactly.
 - `step gate: changed-tests | ticket-tests`. `changed-tests`: per step run
   the typecheck and only the test files the step created or changed (and,
   under `test scope: feature`, the specs covering a shared file the step
-  touched); the ticket's whole exit-condition set runs once, at the end of
-  the ticket. `ticket-tests`: every step runs the cheap checks and the
-  ticket's exit conditions.
+  touched); the ticket's whole completion-condition set runs once, at the
+  end of the ticket. `ticket-tests`: every step runs the cheap checks and
+  the ticket's completion conditions.
 - `prove failing first: bug-fixes | always`. `bug-fixes`: the proof that a
   test fails against the old code is required only for a bug fix (a fix
   ticket or step); tests for new features skip it. `always`: every test
@@ -404,8 +405,8 @@ MAY NOT     <the negative constraint — often an invariant in one line>
 
 ## Invariants this touches
 
-- <invariant>, checked by <which exit condition>
-- D<n> <design invariant>, checked by <which exit condition>
+- <invariant>, checked by <which completion condition>
+- D<n> <design invariant>, checked by <which completion condition>
 
 ## Steps
 
@@ -421,7 +422,7 @@ MAY NOT     <the negative constraint — often an invariant in one line>
 N. <the end-to-end test> — proves: <the flow the slice delivers, end
    to end>
 
-## Exit conditions
+## Completion conditions
 
 <one fenced block, one command per line, cheapest first — tools read this
 block, so nothing else goes in it>
@@ -450,8 +451,10 @@ enforce. "Be careful about pricing" is a hope.
 
 The machine-readable contract in `ticket.md`: `## Type`; the `Kind:` line;
 the numbered lines under `## Steps` (one box each in the working
-checklist); and the fenced block under `## Exit conditions`. The file is
-locked for the run.
+checklist); and the fenced block under `## Completion conditions`. A
+ticket written before the rename keeps `## Exit conditions`; the scripts
+and the ready gate still read that heading when `## Completion
+conditions` is absent. The file is locked for the run.
 
 ## Working the frontier
 
@@ -461,7 +464,8 @@ all in a `tickets/done/` folder. That is what can run right now.
 
 A ticket passes the **ready gate** before it is claimed:
 the ticket read as text has a `Kind:` line, a `Summary:` line of at most
-two sentences, at least one command under `## Exit conditions`, at least
+two sentences, at least one command under `## Completion conditions` (or,
+in a ticket written before the rename, `## Exit conditions`), at least
 one numbered step under `## Steps`, and every slug under `## Blocked by`
 has a folder in `items/*/tickets/done/`. Any of these missing: it is
 not claimed and stays in `backlog/`. Whoever claims a ticket applies
@@ -485,7 +489,7 @@ refactors, the grey box, working the frontier, sizing work to one context
 window, and the no-file-paths rule with its prototype exception are his
 `to-tickets`; the AFK/HITL axis is his `wayfinder`. This file is written
 from that method in this project's words; none of his text is copied.
-Ours: exit conditions as runnable commands rather than prose, the
+Ours: completion conditions as runnable commands rather than prose, the
 cheapest-first gate chain, the required `NOT CHECKED` and `HUMAN CHECK`
 headings, the `Parent` line, tickets as files with the folder as the
 column and GitHub as a mirror, writing to backlog so the gate checks
