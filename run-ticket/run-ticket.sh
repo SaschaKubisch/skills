@@ -71,7 +71,27 @@ if [ "$col" = backlog ]; then
 fi
 log "run $slug: worktree $wt, branch $branch"
 
+# 5. PROGRESS.md: the first line names the ticket, then one box per step. It stays uncommitted.
+{ echo "ticket: $slug"; awk '/^## /{s=($0=="## Steps");next} s&&/^[0-9]+\. /{sub(/^[0-9]+\. /,"- [ ] ");print}' "$dir/ticket.md"; } > PROGRESS.md
+ex=$(git rev-parse --git-path info/exclude); mkdir -p "$(dirname "$ex")"
+grep -qx PROGRESS.md "$ex" 2>/dev/null || echo PROGRESS.md >> "$ex"
+
+# 7. The loop. Each iteration: a fresh worker, then the completion conditions.
 n=0; status=turn-limit
+while [ "$n" -lt "$limit" ]; do
+  n=$((n + 1))
+  { cat "$here/prompt.md"; echo; echo "The ticket file is $dir/ticket.md."; } |
+    RUN_TICKET_ITERATION=$n RUN_TICKET_FILE=$dir/ticket.md bash -c "$worker" > "$run/iter-$n-worker.log" 2>&1
+  log "iteration $n: the worker exited with code $?"
+  fails=0; : > "$run/iter-$n-conditions.log"
+  while IFS= read -r c; do
+    out=$(bash -c "$c" </dev/null 2>&1); rc=$?
+    printf '$ %s\nexit code %s\n%s\n\n' "$c" "$rc" "$out" >> "$run/iter-$n-conditions.log"
+    [ "$rc" -eq 0 ] || fails=$((fails + 1))
+  done <<<"$conds"
+  log "iteration $n: $fails completion condition(s) fail"
+  [ "$fails" -eq 0 ] && { status=passed; break; }
+done
 
 # 8. Stop: write the evidence, print where everything is, exit with the status code.
 last=$(git rev-parse HEAD)
